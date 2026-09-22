@@ -1,6 +1,7 @@
 package com.moura.agrios.models;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.moura.agrios.enums.TipoIE;
@@ -83,11 +84,9 @@ public class Fazenda {
 
     @PrePersist
     public void prePersist() {
-
         if (criadoEm == null) {
-            criadoEm = LocalDateTime.now();
+            criadoEm = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
         }
-
         if (ativo == null) {
             ativo = true;
         }

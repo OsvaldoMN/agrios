@@ -37,10 +37,25 @@ public class SecurityConfigurations {
     // Login e registro
     .requestMatchers(HttpMethod.POST,"/auth/login","/auth/register").permitAll()
 
-    // Apenas ADMIN pode cadastrar
+    // Cadastrar cliente: apenas aDMIN
     .requestMatchers(HttpMethod.POST,"/clientes").hasRole("ADMIN")
 
+    // Cadastrar fazenda: apenas ADMIN
     .requestMatchers(HttpMethod.POST,"/clientes/*/fazendas").hasRole("ADMIN")
+
+    // Atualizar cliente: apenas ADMIN
+    .requestMatchers(HttpMethod.PUT,"/clientes/*").hasRole("ADMIN")
+
+    // Atualizar fazenda: apenas ADMIN
+    .requestMatchers(HttpMethod.PUT,"/clientes/*/fazendas/*").hasRole("ADMIN")
+
+    // Cadastro servico - maquina - produto: apenas ADMIN
+    .requestMatchers(HttpMethod.POST, "/servicos", "/maquinas", "/produtos").hasRole("ADMIN")
+
+    // Atualizar servico - maquina - produto: apenas ADMIN
+    .requestMatchers(HttpMethod.PUT, "/servicos/*", "/maquinas/*", "/produtos/*").hasRole("ADMIN")
+
+
 
     // Todas as demais rotas exigem autenticação
     .anyRequest().authenticated()

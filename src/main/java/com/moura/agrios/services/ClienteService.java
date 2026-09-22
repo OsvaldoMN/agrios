@@ -9,6 +9,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.moura.agrios.models.Cliente;
 import com.moura.agrios.repositories.ClienteRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class ClienteService {
 
@@ -51,6 +53,42 @@ public class ClienteService {
                 )
             );
     }
+
+    
+    @Transactional
+    public Cliente atualizar(Integer id, Cliente dados) {
+
+        Cliente cliente = buscarPorId(id);
+
+        validarCliente(dados);
+
+        // Verifica se o documento pertence a OUTRO cliente
+        if (clienteRepository.existsByDocumentoAndIdNot(dados.getDocumento(),id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Já existe outro cliente com este documento");
+        }
+
+        // Verifica se o e-mail pertence a OUTRO cliente
+        if (dados.getEmail() != null && !dados.getEmail().isBlank() && clienteRepository.existsByEmailAndIdNot(dados.getEmail(),id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Já existe outro cliente com este e-mail");
+        }
+
+        // Atualiza os campos cadastrais
+        cliente.setTipoPessoa(dados.getTipoPessoa());
+        cliente.setNome(dados.getNome());
+        cliente.setRazaoSocial(dados.getRazaoSocial());
+        cliente.setNomeFantasia(dados.getNomeFantasia());
+        cliente.setDocumento(dados.getDocumento());
+        cliente.setDataNascimento(dados.getDataNascimento());
+
+        cliente.setEmail(dados.getEmail() == null || dados.getEmail().isBlank() ? null: dados.getEmail().trim());
+
+        cliente.setContato(dados.getContato());
+        cliente.setObservacoes(dados.getObservacoes());
+        cliente.setAtivo(dados.getAtivo());
+
+        return clienteRepository.save(cliente);
+    }
+
 
     private void validarCliente(Cliente cliente) {
 

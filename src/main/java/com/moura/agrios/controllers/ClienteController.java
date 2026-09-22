@@ -38,4 +38,14 @@ public class ClienteController {
     public ResponseEntity<Cliente> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(clienteService.buscarPorId(id));
     }
+
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Cliente> atualizar(@PathVariable Integer id, @Valid @RequestBody Cliente dados) {
+        Cliente clienteAtualizado = clienteService.atualizar(id, dados);
+
+        return ResponseEntity.ok(clienteAtualizado);
+    }
+
+
 }

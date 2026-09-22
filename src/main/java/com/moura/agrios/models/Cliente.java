@@ -2,6 +2,7 @@ package com.moura.agrios.models;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,11 +95,9 @@ public class Cliente {
 
     @PrePersist
     public void prePersist() {
-
         if (criadoEm == null) {
-            criadoEm = LocalDateTime.now();
+            criadoEm = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
         }
-
         if (ativo == null) {
             ativo = true;
         }

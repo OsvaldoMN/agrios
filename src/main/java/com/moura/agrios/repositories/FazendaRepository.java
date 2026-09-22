@@ -17,4 +17,6 @@ public interface FazendaRepository extends JpaRepository<Fazenda, Integer> {
 
     boolean existsByInscricaoEstadualAndEstadoIgnoreCase(String inscricaoEstadual, String estado);
 
+    boolean existsByInscricaoEstadualAndEstadoIgnoreCaseAndIdNot(String inscricaoEstadual, String estado, Integer id);
+
 }

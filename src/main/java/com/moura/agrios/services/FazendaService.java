@@ -9,6 +9,8 @@ import com.moura.agrios.models.Cliente;
 import com.moura.agrios.models.Fazenda;
 import com.moura.agrios.repositories.FazendaRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class FazendaService {
 
@@ -24,7 +26,7 @@ public class FazendaService {
 
         Cliente cliente = clienteService.buscarPorId(clienteId);
 
-        validarFazenda(fazenda);
+        validarFazenda(fazenda, null);
 
         fazenda.setCliente(cliente);
         fazenda.setAtivo(true);
@@ -46,7 +48,41 @@ public class FazendaService {
             );
     }
 
-    private void validarFazenda(Fazenda fazenda) {
+            
+@Transactional
+public Fazenda atualizar(Integer clienteId, Integer fazendaId, Fazenda dados) {
+
+    // Busca a fazenda e garante que pertence ao cliente
+    Fazenda fazenda = buscarPorId(clienteId, fazendaId);
+
+    // Reutiliza as validações, ignorando o próprio ID
+    // na verificação de IE duplicada
+    validarFazenda(dados, fazendaId);
+
+    fazenda.setNome(dados.getNome());
+    fazenda.setTipoIe(dados.getTipoIe());
+    fazenda.setInscricaoEstadual(dados.getInscricaoEstadual());
+
+    fazenda.setCep(dados.getCep());
+    fazenda.setEstado(dados.getEstado());
+    fazenda.setCidade(dados.getCidade());
+    fazenda.setBairro(dados.getBairro());
+    fazenda.setLogradouro(dados.getLogradouro());
+    fazenda.setNumero(dados.getNumero());
+    fazenda.setComplemento(dados.getComplemento());
+    fazenda.setObservacoes(dados.getObservacoes());
+
+    //Ativo
+    fazenda.setAtivo(dados.getAtivo());
+
+    return fazendaRepository.save(fazenda);
+}
+
+
+
+
+
+    private void validarFazenda(Fazenda fazenda, Integer idExcluir) {
 
         if (fazenda.getNome() == null || fazenda.getNome().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome da fazenda é obrigatório");
@@ -57,17 +93,18 @@ public class FazendaService {
         }
 
         normalizarEndereco(fazenda);
-        validarInscricaoEstadual(fazenda);
+        validarInscricaoEstadual(fazenda, idExcluir);
     }
 
-    private void validarInscricaoEstadual(Fazenda fazenda) {
+
+    
+
+    private void validarInscricaoEstadual(Fazenda fazenda, Integer idExcluir) {
 
         if (fazenda.getTipoIe() == TipoIE.CONTRIBUINTE) {
-
             if (fazenda.getInscricaoEstadual() == null || fazenda.getInscricaoEstadual().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inscrição Estadual é obrigatória para contribuinte");
             }
-
             if (fazenda.getEstado() == null || fazenda.getEstado().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado é obrigatório para fazenda contribuinte");
             }
@@ -76,19 +113,25 @@ public class FazendaService {
 
             fazenda.setInscricaoEstadual(ie);
 
-            //Verifica se tem 2 IE iguais dentro do mesmo estado
-            if (fazendaRepository.existsByInscricaoEstadualAndEstadoIgnoreCase(ie,fazenda.getEstado())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe uma fazenda cadastrada com esta IE neste estado");
+            boolean ieDuplicada;
+
+            if (idExcluir == null) {
+                // Cadastro: verifica todas as fazendas
+                ieDuplicada = fazendaRepository.existsByInscricaoEstadualAndEstadoIgnoreCase(ie, fazenda.getEstado());
+            } else {
+                // Atualização: ignora a própria fazenda
+                ieDuplicada = fazendaRepository.existsByInscricaoEstadualAndEstadoIgnoreCaseAndIdNot(ie, fazenda.getEstado(), idExcluir);
+            }
+            if (ieDuplicada) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe outra fazenda com esta IE neste estado");
             }
             return;
         }
-
-        //Caso tipoIE != Contribuinte
+        // ISENTO ou NAO_CONTRIBUINTE
         fazenda.setInscricaoEstadual(null);
     }
 
     private void normalizarEndereco(Fazenda fazenda) {
-
         if (fazenda.getEstado() != null && !fazenda.getEstado().isBlank()) {
 
             String estado = fazenda.getEstado().trim().toUpperCase();
@@ -96,7 +139,6 @@ public class FazendaService {
             if (estado.length() != 2) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Estado deve ser informado pela sigla da UF");
             }
-
             fazenda.setEstado(estado);
         }
 

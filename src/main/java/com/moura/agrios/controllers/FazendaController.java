@@ -40,4 +40,15 @@ public class FazendaController {
 
         return ResponseEntity.ok(fazendaService.buscarPorId(clienteId,fazendaId));
     }
+
+    
+    @PutMapping("/{fazendaId}")
+    public ResponseEntity<Fazenda> atualizar(@PathVariable Integer clienteId, @PathVariable Integer fazendaId, @Valid @RequestBody Fazenda dados) {
+
+        Fazenda fazendaAtualizada = fazendaService.atualizar(clienteId, fazendaId, dados);
+
+        return ResponseEntity.ok(fazendaAtualizada);
+    }
+
+
 }
