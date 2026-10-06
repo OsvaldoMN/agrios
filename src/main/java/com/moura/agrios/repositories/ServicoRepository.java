@@ -13,10 +13,7 @@ public interface ServicoRepository extends JpaRepository<Servico, Integer> {
 
     boolean existsByNomeIgnoreCase(String nome);
 
-    boolean existsByNomeIgnoreCaseAndIdNot(
-        String nome,
-        Integer id
-    );
+    boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
 
     List<Servico> findByAtivoTrue();
 }

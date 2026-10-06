@@ -56,6 +56,19 @@ public class SecurityConfigurations {
     .requestMatchers(HttpMethod.PUT, "/servicos/*", "/maquinas/*", "/produtos/*").hasRole("ADMIN")
 
 
+    // OS
+
+    // Cadastrar OS
+    .requestMatchers(HttpMethod.POST,"/ordens-servico").hasRole("ADMIN")
+
+    // Editar OS
+    .requestMatchers(HttpMethod.PUT,"/ordens-servico/*").hasRole("ADMIN")
+
+    // Finalizar OS
+    .requestMatchers(HttpMethod.PATCH,"/ordens-servico/*/finalizar").hasRole("ADMIN")
+
+    // Cancelar OS
+    .requestMatchers(HttpMethod.PATCH,"/ordens-servico/*/cancelar").hasRole("ADMIN")
 
     // Todas as demais rotas exigem autenticação
     .anyRequest().authenticated()
