@@ -2,6 +2,7 @@
 package com.moura.agrios.services;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
@@ -26,6 +27,7 @@ public class OrdemServicoService {
     private final ServicoService servicoService;
     private final ProdutoService produtoService;
     private final MaquinaService maquinaService;
+    private final ContaReceberService contaReceberService;
 
     public OrdemServicoService(
             OrdemServicoRepository osRepository,
@@ -33,7 +35,8 @@ public class OrdemServicoService {
             FazendaService fazendaService,
             ServicoService servicoService,
             ProdutoService produtoService,
-            MaquinaService maquinaService) {
+            MaquinaService maquinaService,
+            ContaReceberService contaReceberService) {
 
         this.osRepository = osRepository;
         this.clienteService = clienteService;
@@ -41,6 +44,7 @@ public class OrdemServicoService {
         this.servicoService = servicoService;
         this.produtoService = produtoService;
         this.maquinaService = maquinaService;
+        this.contaReceberService = contaReceberService;
     }
 
     // ========================================
@@ -89,22 +93,26 @@ public OrdemServicoResponse atualizar(Integer id, CadastrarOrdemServicoRequest r
     // ========================================
 
     @Transactional
-    public OrdemServicoResponse finalizar(Integer id) {
+    public OrdemServicoResponse finalizar(Integer id, LocalDate dataVencimento) {
 
-        OrdemServico os = buscarOrdem(id);
+    OrdemServico os = buscarOrdem(id);
 
-        if (os.getStatus() != StatusOS.ABERTA) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Somente OS abertas podem ser finalizadas");
-        }
-
-        if (os.getDataFim() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Preencha a data de fim antes de finalizar a OS");
-        }
-
-        os.setStatus(StatusOS.FINALIZADA);
-
-        return mapearResposta(osRepository.save(os));
+    if (os.getStatus() != StatusOS.ABERTA) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Somente OS abertas podem ser finalizadas");
     }
+
+    if (os.getDataFim() == null) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Preencha a data de fim antes de finalizar a OS");
+    }
+
+    os.setStatus(StatusOS.FINALIZADA);
+    osRepository.save(os);
+
+  
+    contaReceberService.criarPorOrdemServico(os, dataVencimento);
+
+    return mapearResposta(os);
+}
 
     // ========================================
     // CANCELAR
@@ -121,7 +129,11 @@ public OrdemServicoResponse atualizar(Integer id, CadastrarOrdemServicoRequest r
 
         os.setStatus(StatusOS.CANCELADA);
 
-        return mapearResposta(osRepository.save(os));
+        osRepository.save(os);
+
+        contaReceberService.cancelarPorOrdemServico(os.getId());
+
+        return mapearResposta(os);
     }
 
     // ========================================

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record FinalizarOrdemServicoRequest(
 
-    @NotNull(message = "Data de fim é obrigatória")
-    LocalDate dataFim
+    @NotNull(message = "Data de vencimento é obrigatória")
+    LocalDate dataVencimento
 
 ) {}
