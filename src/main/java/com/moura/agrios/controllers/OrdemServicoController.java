@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.moura.agrios.dtos.CadastrarOrdemServicoRequest;
+import com.moura.agrios.dtos.FinalizarOrdemServicoRequest;
 import com.moura.agrios.dtos.OrdemServicoResponse;
 import com.moura.agrios.services.OrdemServicoService;
 
@@ -51,14 +52,10 @@ public ResponseEntity<OrdemServicoResponse> atualizar(
 
     // FINALIZAR
     @PatchMapping("/{id}/finalizar")
-    public ResponseEntity<OrdemServicoResponse> finalizar(
-            @PathVariable Integer id) {
+    public ResponseEntity<OrdemServicoResponse> finalizar(@PathVariable Integer id, @Valid @RequestBody FinalizarOrdemServicoRequest request) {
 
-        OrdemServicoResponse resposta =
-            ordemServicoService.finalizar(id);
-
-        return ResponseEntity.ok(resposta);
-    }
+        return ResponseEntity.ok(ordemServicoService.finalizar(id, request.dataVencimento()));
+        }
 
     // CANCELAR
     @PatchMapping("/{id}/cancelar")

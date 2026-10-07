@@ -70,6 +70,13 @@ public class SecurityConfigurations {
     // Cancelar OS
     .requestMatchers(HttpMethod.PATCH,"/ordens-servico/*/cancelar").hasRole("ADMIN")
 
+
+    // Criar Conta a Receber manual
+    .requestMatchers(HttpMethod.POST,"/contas-receber").hasRole("ADMIN")
+
+    // Registrar pagamento
+    .requestMatchers(HttpMethod.POST, "/contas-receber/*/pagamentos").hasRole("ADMIN")
+
     // Todas as demais rotas exigem autenticação
     .anyRequest().authenticated()
 )
