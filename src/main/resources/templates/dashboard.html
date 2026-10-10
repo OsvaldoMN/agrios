@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Dashboard')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Painel de Controle')}"></header>
+
+      <main class="app-content">
+
+        <!-- Grid de Indicadores Principais -->
+        <div class="metrics-grid">
+          
+          <!-- OS Abertas -->
+          <div class="metric-card">
+            <div>
+              <div class="metric-title">OS em Aberto</div>
+              <div id="metricOsAbertas" class="metric-value">-</div>
+              <div class="metric-subtext">Aguardando finalização</div>
+            </div>
+            <div class="metric-icon blue">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+          </div>
+
+          <!-- OS Finalizadas -->
+          <div class="metric-card">
+            <div>
+              <div class="metric-title">OS Finalizadas</div>
+              <div id="metricOsFinalizadas" class="metric-value">-</div>
+              <div class="metric-subtext">Serviços concluídos</div>
+            </div>
+            <div class="metric-icon green">
+              <i class="bi bi-check-circle"></i>
+            </div>
+          </div>
+
+          <!-- Contas Atrasadas -->
+          <div class="metric-card">
+            <div>
+              <div class="metric-title">Contas Atrasadas</div>
+              <div id="metricContasAtrasadas" class="metric-value">-</div>
+              <div class="metric-subtext">Vencidas e pendentes</div>
+            </div>
+            <div class="metric-icon red">
+              <i class="bi bi-exclamation-octagon"></i>
+            </div>
+          </div>
+
+          <!-- Total a Receber -->
+          <div class="metric-card">
+            <div>
+              <div class="metric-title">Saldo a Receber</div>
+              <div id="metricSaldoReceber" class="metric-value">R$ 0,00</div>
+              <div class="metric-subtext">Contas abertas e parciais</div>
+            </div>
+            <div class="metric-icon amber">
+              <i class="bi bi-cash"></i>
+            </div>
+          </div>
+
+          <!-- Total Recebido -->
+          <div class="metric-card">
+            <div>
+              <div class="metric-title">Total Recebido</div>
+              <div id="metricTotalRecebido" class="metric-value">R$ 0,00</div>
+              <div class="metric-subtext">Baixas computadas</div>
+            </div>
+            <div class="metric-icon green">
+              <i class="bi bi-wallet2"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+
+          <!-- Card: Ordens de Serviço Recentes -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="bi bi-clock-history"></i>
+                Ordens de Serviço Recentes
+              </h2>
+              <a href="/ordens-servico" class="btn btn-secondary btn-sm">Ver Todas</a>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="table-custom">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Cliente</th>
+                      <th>Serviço</th>
+                      <th>Valor</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaOsRecentes">
+                    <tr>
+                      <td colspan="5" class="table-empty">
+                        <i class="bi bi-hourglass-split"></i>
+                        Carregando informações...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card: Contas a Receber Próximas / Pendentes -->
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="bi bi-calendar-event"></i>
+                Contas a Receber Recentes
+              </h2>
+              <a href="/contas-receber" class="btn btn-secondary btn-sm">Ver Todas</a>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="table-custom">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Cliente / Descrição</th>
+                      <th>Vencimento</th>
+                      <th>Saldo</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaContasRecentes">
+                    <tr>
+                      <td colspan="5" class="table-empty">
+                        <i class="bi bi-hourglass-split"></i>
+                        Carregando informações...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        await Promise.all([carregarOrdensServico(), carregarContasReceber()]);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    async function carregarOrdensServico() {
+      const tbody = document.getElementById("tabelaOsRecentes");
+      try {
+        const ordens = await Api.get("/ordens-servico");
+
+        if (!ordens || !Array.isArray(ordens)) {
+          tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Nenhuma OS encontrada.</td></tr>';
+          return;
+        }
+
+        // Métricas
+        const abertas = ordens.filter(o => o.status === "ABERTA").length;
+        const finalizadas = ordens.filter(o => o.status === "FINALIZADA").length;
+        document.getElementById("metricOsAbertas").textContent = abertas;
+        document.getElementById("metricOsFinalizadas").textContent = finalizadas;
+
+        if (ordens.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="table-empty">
+                <i class="bi bi-clipboard-x"></i>
+                Nenhuma Ordem de Serviço cadastrada.
+              </td>
+            </tr>`;
+          return;
+        }
+
+        // Ordena por ID descrescente para mostrar as mais recentes
+        const recentes = [...ordens].sort((a, b) => b.id - a.id).slice(0, 6);
+
+        tbody.innerHTML = recentes.map(os => `
+          <tr>
+            <td style="font-weight: 600;">
+              <a href="/ordens-servico/${os.id}/detalhes">#${os.id}</a>
+            </td>
+            <td>${os.clienteNome || "-"}</td>
+            <td>${os.servicoNome || "-"}</td>
+            <td>${App.formatCurrency(os.valorTotal)}</td>
+            <td>${App.renderStatusBadge(os.status)}</td>
+          </tr>
+        `).join("");
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    async function carregarContasReceber() {
+      const tbody = document.getElementById("tabelaContasRecentes");
+      try {
+        const contas = await Api.get("/contas-receber");
+
+        if (!contas || !Array.isArray(contas)) {
+          tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Nenhuma conta encontrada.</td></tr>';
+          return;
+        }
+
+        // Métricas Financeiras Reais
+        let saldoReceber = 0;
+        let totalRecebido = 0;
+        let atrasadas = 0;
+
+        contas.forEach(c => {
+          if (c.status === "ATRASADA") atrasadas++;
+          if (c.status !== "CANCELADA" && c.status !== "QUITADA") {
+            saldoReceber += Number(c.saldo || 0);
+          }
+          totalRecebido += Number(c.valorRecebido || 0);
+        });
+
+        document.getElementById("metricContasAtrasadas").textContent = atrasadas;
+        document.getElementById("metricSaldoReceber").textContent = App.formatCurrency(saldoReceber);
+        document.getElementById("metricTotalRecebido").textContent = App.formatCurrency(totalRecebido);
+
+        if (contas.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="table-empty">
+                <i class="bi bi-wallet2"></i>
+                Nenhuma Conta a Receber cadastrada.
+              </td>
+            </tr>`;
+          return;
+        }
+
+        // Ordena por ID decrescente para as mais recentes
+        const recentes = [...contas].sort((a, b) => b.id - a.id).slice(0, 6);
+
+        tbody.innerHTML = recentes.map(c => `
+          <tr>
+            <td style="font-weight: 600;">
+              <a href="/contas-receber/${c.id}/detalhes">#${c.id}</a>
+            </td>
+            <td>
+              <div style="font-weight: 500;">${c.clienteNome || "-"}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${c.descricao || "-"}</div>
+            </td>
+            <td>${App.formatDate(c.dataVencimento)}</td>
+            <td style="font-weight: 600;">${App.formatCurrency(c.saldo)}</td>
+            <td>${App.renderStatusBadge(c.status)}</td>
+          </tr>
+        `).join("");
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

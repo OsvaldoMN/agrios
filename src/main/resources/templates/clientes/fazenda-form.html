@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Fazenda' : 'Nova Fazenda'})}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header(${modo == 'editar' ? 'Editar Fazenda' : 'Nova Fazenda'})}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 900px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-geo-alt"></i>
+              <span th:text="${modo == 'editar' ? 'Dados da Fazenda' : 'Cadastro de Nova Fazenda'}">Formulário de Fazenda</span>
+            </h2>
+            <a id="btnVoltarCliente" href="#" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar ao Cliente</span>
+            </a>
+          </div>
+
+          <form id="fazendaForm">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <!-- Nome da Fazenda -->
+                <div class="col-8 form-group">
+                  <label for="nomeFazendaInput" class="form-label required">Nome da Fazenda</label>
+                  <input type="text" id="nomeFazendaInput" class="form-control" placeholder="Ex: Fazenda Boa Esperança" required>
+                </div>
+
+                <!-- Indicador IE -->
+                <div class="col-4 form-group">
+                  <label for="tipoIeSelect" class="form-label required">Indicador de IE</label>
+                  <select id="tipoIeSelect" class="form-select" required>
+                    <option value="CONTRIBUINTE">Contribuinte</option>
+                    <option value="ISENTO">Isento</option>
+                    <option value="NAO_CONTRIBUINTE">Não Contribuinte</option>
+                  </select>
+                </div>
+
+                <!-- Inscrição Estadual -->
+                <div class="col-6 form-group" id="grupoInscricaoEstadual">
+                  <label for="inscricaoEstadualInput" id="labelIe" class="form-label required">Inscrição Estadual</label>
+                  <input type="text" id="inscricaoEstadualInput" class="form-control" placeholder="Número da IE" required>
+                  <span class="form-hint">Obrigatória para produtor contribuinte</span>
+                </div>
+
+                <!-- Estado (UF) -->
+                <div class="col-2 form-group">
+                  <label for="estadoInput" id="labelEstado" class="form-label required">UF</label>
+                  <input type="text" id="estadoInput" class="form-control" maxlength="2" placeholder="Ex: SP" style="text-transform: uppercase;" required>
+                </div>
+
+                <!-- CEP -->
+                <div class="col-4 form-group">
+                  <label for="cepInput" class="form-label">CEP</label>
+                  <input type="text" id="cepInput" class="form-control" maxlength="9" placeholder="00000-000">
+                </div>
+
+                <!-- Cidade -->
+                <div class="col-6 form-group">
+                  <label for="cidadeInput" class="form-label">Cidade</label>
+                  <input type="text" id="cidadeInput" class="form-control" placeholder="Ex: Ribeirão Preto">
+                </div>
+
+                <!-- Bairro -->
+                <div class="col-6 form-group">
+                  <label for="bairroInput" class="form-label">Bairro / Região</label>
+                  <input type="text" id="bairroInput" class="form-control" placeholder="Ex: Zona Rural">
+                </div>
+
+                <!-- Logradouro -->
+                <div class="col-8 form-group">
+                  <label for="logradouroInput" class="form-label">Logradouro / Rodovia / Estrada</label>
+                  <input type="text" id="logradouroInput" class="form-control" placeholder="Ex: Rodovia SP-330, KM 120">
+                </div>
+
+                <!-- Número -->
+                <div class="col-4 form-group">
+                  <label for="numeroInput" class="form-label">Número / KM</label>
+                  <input type="text" id="numeroInput" class="form-control" placeholder="Ex: S/N ou KM 120">
+                </div>
+
+                <!-- Complemento -->
+                <div class="col-8 form-group">
+                  <label for="complementoInput" class="form-label">Complemento / Ponto de Referência</label>
+                  <input type="text" id="complementoInput" class="form-control" placeholder="Ex: Próximo à entrada do silo">
+                </div>
+
+                <!-- Status Ativo -->
+                <div class="col-4 form-group" style="justify-content: flex-end;">
+                  <label class="form-check">
+                    <input type="checkbox" id="ativoFazendaInput" checked>
+                    <span style="font-weight: 500;">Fazenda Ativa</span>
+                  </label>
+                </div>
+
+                <!-- Observações -->
+                <div class="col-12 form-group">
+                  <label for="observacoesFazendaInput" class="form-label">Observações da Fazenda</label>
+                  <textarea id="observacoesFazendaInput" class="form-textarea" placeholder="Informações de acesso, rotas, etc."></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a id="btnCancelarFazenda" href="#" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarFazenda" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações' : 'Cadastrar Fazenda'}">Salvar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const clienteId = /*[[${clienteId}]]*/ null;
+    const fazendaId = /*[[${fazendaId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (clienteId) {
+        document.getElementById("btnVoltarCliente").href = `/clientes/${clienteId}/detalhes`;
+        document.getElementById("btnCancelarFazenda").href = `/clientes/${clienteId}/detalhes`;
+      }
+
+      configurarTipoIe();
+
+      if (modo === "editar" && clienteId && fazendaId) {
+        await carregarDadosFazenda();
+      }
+
+      document.getElementById("fazendaForm").addEventListener("submit", salvarFazenda);
+    });
+
+    function configurarTipoIe() {
+      const select = document.getElementById("tipoIeSelect");
+      const ieInput = document.getElementById("inscricaoEstadualInput");
+      const ieLabel = document.getElementById("labelIe");
+      const estadoInput = document.getElementById("estadoInput");
+      const estadoLabel = document.getElementById("labelEstado");
+
+      function atualizar() {
+        if (select.value === "CONTRIBUINTE") {
+          ieInput.disabled = false;
+          ieInput.required = true;
+          ieLabel.classList.add("required");
+          estadoInput.required = true;
+          estadoLabel.classList.add("required");
+        } else {
+          ieInput.value = "";
+          ieInput.disabled = true;
+          ieInput.required = false;
+          ieLabel.classList.remove("required");
+          estadoInput.required = false;
+          estadoLabel.classList.remove("required");
+        }
+      }
+
+      select.addEventListener("change", atualizar);
+      atualizar();
+    }
+
+    async function carregarDadosFazenda() {
+      try {
+        const f = await Api.get(`/clientes/${clienteId}/fazendas/${fazendaId}`);
+        if (!f) return;
+
+        document.getElementById("nomeFazendaInput").value = f.nome || "";
+        document.getElementById("tipoIeSelect").value = f.tipoIe || "CONTRIBUINTE";
+        document.getElementById("tipoIeSelect").dispatchEvent(new Event("change"));
+
+        document.getElementById("inscricaoEstadualInput").value = f.inscricaoEstadual || "";
+        document.getElementById("estadoInput").value = f.estado || "";
+        document.getElementById("cepInput").value = f.cep || "";
+        document.getElementById("cidadeInput").value = f.cidade || "";
+        document.getElementById("bairroInput").value = f.bairro || "";
+        document.getElementById("logradouroInput").value = f.logradouro || "";
+        document.getElementById("numeroInput").value = f.numero || "";
+        document.getElementById("complementoInput").value = f.complemento || "";
+        document.getElementById("ativoFazendaInput").checked = f.ativo !== false;
+        document.getElementById("observacoesFazendaInput").value = f.observacoes || "";
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarFazenda(e) {
+      e.preventDefault();
+
+      const nome = document.getElementById("nomeFazendaInput").value.trim();
+      const tipoIe = document.getElementById("tipoIeSelect").value;
+      const inscricaoEstadual = document.getElementById("inscricaoEstadualInput").value.trim();
+      const estado = document.getElementById("estadoInput").value.trim().toUpperCase();
+      const cep = document.getElementById("cepInput").value.trim().replace(/\D/g, "");
+      const cidade = document.getElementById("cidadeInput").value.trim();
+      const bairro = document.getElementById("bairroInput").value.trim();
+      const logradouro = document.getElementById("logradouroInput").value.trim();
+      const numero = document.getElementById("numeroInput").value.trim();
+      const complemento = document.getElementById("complementoInput").value.trim();
+      const ativo = document.getElementById("ativoFazendaInput").checked;
+      const observacoes = document.getElementById("observacoesFazendaInput").value.trim();
+
+      if (!nome) {
+        App.toast("Nome da fazenda é obrigatório.", "warning");
+        return;
+      }
+
+      if (tipoIe === "CONTRIBUINTE" && (!inscricaoEstadual || !estado)) {
+        App.toast("Inscrição Estadual e UF são obrigatórias para fazenda contribuinte.", "warning");
+        return;
+      }
+
+      const payload = {
+        nome,
+        tipoIe,
+        inscricaoEstadual: tipoIe === "CONTRIBUINTE" ? inscricaoEstadual : null,
+        estado: estado || null,
+        cep: cep || null,
+        cidade: cidade || null,
+        bairro: bairro || null,
+        logradouro: logradouro || null,
+        numero: numero || null,
+        complemento: complemento || null,
+        ativo,
+        observacoes: observacoes || null
+      };
+
+      const btn = document.getElementById("btnSalvarFazenda");
+      btn.disabled = true;
+
+      try {
+        if (modo === "editar") {
+          await Api.put(`/clientes/${clienteId}/fazendas/${fazendaId}`, payload);
+          App.toast("Fazenda atualizada com sucesso!", "success");
+        } else {
+          await Api.post(`/clientes/${clienteId}/fazendas`, payload);
+          App.toast("Fazenda cadastrada com sucesso!", "success");
+        }
+
+        setTimeout(() => {
+          window.location.href = `/clientes/${clienteId}/detalhes`;
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

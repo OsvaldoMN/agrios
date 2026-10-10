@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Serviço' : 'Novo Serviço'})}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header(${modo == 'editar' ? 'Editar Serviço' : 'Novo Serviço'})}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 700px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-tools"></i>
+              <span th:text="${modo == 'editar' ? 'Dados do Serviço' : 'Cadastro de Novo Serviço'}">Formulário de Serviço</span>
+            </h2>
+            <a href="/servicos" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="servicoForm">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <div class="col-12 form-group">
+                  <label for="nomeServicoInput" class="form-label required">Nome do Serviço</label>
+                  <input type="text" id="nomeServicoInput" class="form-control" maxlength="150" placeholder="Ex: Pulverização Terrestre, Gradagem, Plantio" required>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="descricaoServicoInput" class="form-label">Descrição do Serviço</label>
+                  <textarea id="descricaoServicoInput" class="form-textarea" placeholder="Detalhes técnicos, procedimentos ou escopo do serviço..."></textarea>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label class="form-check">
+                    <input type="checkbox" id="ativoServicoInput" checked>
+                    <span style="font-weight: 500;">Serviço Ativo</span>
+                  </label>
+                  <span class="form-hint">Serviços inativos não aparecem na criação de novas Ordens de Serviço.</span>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a href="/servicos" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarServico" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações' : 'Cadastrar Serviço'}">Salvar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const servicoId = /*[[${servicoId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (modo === "editar" && servicoId) {
+        await carregarDadosServico();
+      }
+
+      document.getElementById("servicoForm").addEventListener("submit", salvarServico);
+    });
+
+    async function carregarDadosServico() {
+      try {
+        const s = await Api.get(`/servicos/${servicoId}`);
+        if (!s) return;
+
+        document.getElementById("nomeServicoInput").value = s.nome || "";
+        document.getElementById("descricaoServicoInput").value = s.descricao || "";
+        document.getElementById("ativoServicoInput").checked = s.ativo !== false;
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarServico(e) {
+      e.preventDefault();
+
+      const nome = document.getElementById("nomeServicoInput").value.trim();
+      const descricao = document.getElementById("descricaoServicoInput").value.trim();
+      const ativo = document.getElementById("ativoServicoInput").checked;
+
+      if (!nome) {
+        App.toast("Nome do serviço é obrigatório.", "warning");
+        return;
+      }
+
+      const payload = {
+        nome,
+        descricao: descricao || null,
+        ativo
+      };
+
+      const btn = document.getElementById("btnSalvarServico");
+      btn.disabled = true;
+
+      try {
+        if (modo === "editar") {
+          await Api.put(`/servicos/${servicoId}`, payload);
+          App.toast("Serviço atualizado com sucesso!", "success");
+        } else {
+          await Api.post("/servicos", payload);
+          App.toast("Serviço cadastrado com sucesso!", "success");
+        }
+
+        setTimeout(() => {
+          window.location.href = "/servicos";
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Máquina' : 'Nova Máquina'})}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header(${modo == 'editar' ? 'Editar Máquina' : 'Nova Máquina'})}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 850px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-truck"></i>
+              <span th:text="${modo == 'editar' ? 'Dados da Máquina' : 'Cadastro de Nova Máquina'}">Formulário de Máquina</span>
+            </h2>
+            <a href="/maquinas" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="maquinaForm">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <div class="col-8 form-group">
+                  <label for="nomeMaquinaInput" class="form-label required">Nome / Descrição da Máquina</label>
+                  <input type="text" id="nomeMaquinaInput" class="form-control" maxlength="150" placeholder="Ex: Trator John Deere 6110J, Pulverizador Uniport" required>
+                </div>
+
+                <div class="col-4 form-group">
+                  <label for="identificacaoMaquinaInput" class="form-label">Identificação / Prefixo Interno</label>
+                  <input type="text" id="identificacaoMaquinaInput" class="form-control" maxlength="80" placeholder="Ex: TRAT-01, PULV-02" style="text-transform: uppercase;">
+                  <span class="form-hint">Código único de controle operacional</span>
+                </div>
+
+                <div class="col-4 form-group">
+                  <label for="marcaMaquinaInput" class="form-label">Marca</label>
+                  <input type="text" id="marcaMaquinaInput" class="form-control" maxlength="100" placeholder="Ex: John Deere, Case, New Holland">
+                </div>
+
+                <div class="col-4 form-group">
+                  <label for="modeloMaquinaInput" class="form-label">Modelo</label>
+                  <input type="text" id="modeloMaquinaInput" class="form-control" maxlength="100" placeholder="Ex: 6110J, Patriot 250">
+                </div>
+
+                <div class="col-4 form-group">
+                  <label for="anoFabricacaoMaquinaInput" class="form-label">Ano de Fabricação</label>
+                  <input type="number" id="anoFabricacaoMaquinaInput" class="form-control" min="1900" max="2100" placeholder="Ex: 2022">
+                </div>
+
+                <div class="col-4 form-group">
+                  <label for="placaMaquinaInput" class="form-label">Placa (se houver)</label>
+                  <input type="text" id="placaMaquinaInput" class="form-control" maxlength="10" placeholder="Ex: ABC1D23" style="text-transform: uppercase;">
+                </div>
+
+                <div class="col-8 form-group">
+                  <label for="numeroSerieMaquinaInput" class="form-label">Número de Série / Chassi</label>
+                  <input type="text" id="numeroSerieMaquinaInput" class="form-control" maxlength="100" placeholder="Número de série gravado no chassi">
+                </div>
+
+                <div class="col-12 form-group">
+                  <label class="form-check">
+                    <input type="checkbox" id="ativoMaquinaInput" checked>
+                    <span style="font-weight: 500;">Máquina Ativa</span>
+                  </label>
+                  <span class="form-hint">Máquinas inativas não ficam disponíveis para alocação em novas Ordens de Serviço.</span>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="descricaoMaquinaInput" class="form-label">Observações / Detalhes Operacionais</label>
+                  <textarea id="descricaoMaquinaInput" class="form-textarea" placeholder="Informações de implementos compatíveis, manutenção, etc."></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a href="/maquinas" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarMaquina" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações' : 'Cadastrar Máquina'}">Salvar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const maquinaId = /*[[${maquinaId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (modo === "editar" && maquinaId) {
+        await carregarDadosMaquina();
+      }
+
+      document.getElementById("maquinaForm").addEventListener("submit", salvarMaquina);
+    });
+
+    async function carregarDadosMaquina() {
+      try {
+        const m = await Api.get(`/maquinas/${maquinaId}`);
+        if (!m) return;
+
+        document.getElementById("nomeMaquinaInput").value = m.nome || "";
+        document.getElementById("identificacaoMaquinaInput").value = m.identificacao || "";
+        document.getElementById("marcaMaquinaInput").value = m.marca || "";
+        document.getElementById("modeloMaquinaInput").value = m.modelo || "";
+        document.getElementById("anoFabricacaoMaquinaInput").value = m.anoFabricacao || "";
+        document.getElementById("placaMaquinaInput").value = m.placa || "";
+        document.getElementById("numeroSerieMaquinaInput").value = m.numeroSerie || "";
+        document.getElementById("ativoMaquinaInput").checked = m.ativo !== false;
+        document.getElementById("descricaoMaquinaInput").value = m.descricao || "";
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarMaquina(e) {
+      e.preventDefault();
+
+      const nome = document.getElementById("nomeMaquinaInput").value.trim();
+      const identificacao = document.getElementById("identificacaoMaquinaInput").value.trim().toUpperCase();
+      const marca = document.getElementById("marcaMaquinaInput").value.trim();
+      const modelo = document.getElementById("modeloMaquinaInput").value.trim();
+      const anoFabricacao = document.getElementById("anoFabricacaoMaquinaInput").value;
+      const placa = document.getElementById("placaMaquinaInput").value.trim().toUpperCase();
+      const numeroSerie = document.getElementById("numeroSerieMaquinaInput").value.trim();
+      const ativo = document.getElementById("ativoMaquinaInput").checked;
+      const descricao = document.getElementById("descricaoMaquinaInput").value.trim();
+
+      if (!nome) {
+        App.toast("Nome da máquina é obrigatório.", "warning");
+        return;
+      }
+
+      const payload = {
+        nome,
+        identificacao: identificacao || null,
+        marca: marca || null,
+        modelo: modelo || null,
+        anoFabricacao: anoFabricacao ? parseInt(anoFabricacao, 10) : null,
+        placa: placa || null,
+        numeroSerie: numeroSerie || null,
+        ativo,
+        descricao: descricao || null
+      };
+
+      const btn = document.getElementById("btnSalvarMaquina");
+      btn.disabled = true;
+
+      try {
+        if (modo === "editar") {
+          await Api.put(`/maquinas/${maquinaId}`, payload);
+          App.toast("Máquina atualizada com sucesso!", "success");
+        } else {
+          await Api.post("/maquinas", payload);
+          App.toast("Máquina cadastrada com sucesso!", "success");
+        }
+
+        setTimeout(() => {
+          window.location.href = "/maquinas";
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

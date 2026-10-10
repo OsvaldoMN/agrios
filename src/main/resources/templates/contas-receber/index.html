@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Contas a Receber')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Contas a Receber')}"></header>
+
+      <main class="app-content">
+
+        <!-- Barra de Filtros e Nova Conta -->
+        <div class="filter-bar">
+          <div style="display: flex; gap: 12px; flex: 1; flex-wrap: wrap;">
+            <div class="search-input-group">
+              <i class="bi bi-search"></i>
+              <input 
+                type="text" 
+                id="contaSearchInput" 
+                class="form-control" 
+                placeholder="Pesquisar por cliente ou descrição..."
+              >
+            </div>
+
+            <!-- Filtro de Status -->
+            <select id="filtroStatusContaSelect" class="form-select" style="max-width: 190px;">
+              <option value="">Todos os Status</option>
+              <option value="ABERTA">Abertas (Pendentes)</option>
+              <option value="PARCIAL">Parcialmente Pagas</option>
+              <option value="ATRASADA">Atrasadas (Vencidas)</option>
+              <option value="QUITADA">Quitadas</option>
+              <option value="CANCELADA">Canceladas</option>
+            </select>
+          </div>
+
+          <a href="/contas-receber/nova" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            <span>Nova Conta Manual</span>
+          </a>
+        </div>
+
+        <!-- Tabela Financeira de Contas a Receber -->
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Origem</th>
+                    <th>Cliente</th>
+                    <th>Descrição</th>
+                    <th>Vencimento</th>
+                    <th>Valor Total</th>
+                    <th>Valor Pago</th>
+                    <th>Saldo</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaContasBody">
+                  <tr>
+                    <td colspan="10" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando contas a receber...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    let contasCache = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarContas();
+      configurarFiltros();
+    });
+
+    async function carregarContas() {
+      const tbody = document.getElementById("tabelaContasBody");
+      try {
+        const data = await Api.get("/contas-receber");
+        contasCache = Array.isArray(data) ? data : [];
+        renderTabela(contasCache);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="10" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function configurarFiltros() {
+      const searchInput = document.getElementById("contaSearchInput");
+      const statusSelect = document.getElementById("filtroStatusContaSelect");
+
+      function filtrar() {
+        const termo = searchInput.value.toLowerCase().trim();
+        const status = statusSelect.value;
+
+        const filtradas = contasCache.filter(c => {
+          const matchStatus = !status || c.status === status;
+          const matchTermo = !termo ||
+            String(c.id).includes(termo) ||
+            (c.clienteNome || "").toLowerCase().includes(termo) ||
+            (c.descricao || "").toLowerCase().includes(termo);
+
+          return matchStatus && matchTermo;
+        });
+
+        renderTabela(filtradas);
+      }
+
+      searchInput.addEventListener("input", filtrar);
+      statusSelect.addEventListener("change", filtrar);
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("tabelaContasBody");
+
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="table-empty">
+              <i class="bi bi-wallet2"></i>
+              Nenhuma conta a receber encontrada.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      // Ordena por ID decrescente
+      const ordenadas = [...lista].sort((a, b) => b.id - a.id);
+
+      tbody.innerHTML = ordenadas.map(c => {
+        let origemBadge = `<span style="font-size: 0.72rem; color: var(--text-muted);">Manual</span>`;
+        if (c.origem === "ORDEM_SERVICO") {
+          origemBadge = `<a href="/ordens-servico/${c.ordemServicoId}/detalhes" style="font-weight: 600; font-size: 0.78rem;">OS #${c.ordemServicoId}</a>`;
+        }
+
+        return `
+          <tr>
+            <td style="font-weight: 700;">
+              <a href="/contas-receber/${c.id}/detalhes" style="color: var(--color-primary);">
+                #${c.id}
+              </a>
+            </td>
+            <td>${origemBadge}</td>
+            <td style="font-weight: 500;">${c.clienteNome || "-"}</td>
+            <td>${c.descricao || "-"}</td>
+            <td>${App.formatDate(c.dataVencimento)}</td>
+            <td>${App.formatCurrency(c.valor)}</td>
+            <td style="color: var(--color-success);">${App.formatCurrency(c.valorRecebido)}</td>
+            <td style="font-weight: 700;">${App.formatCurrency(c.saldo)}</td>
+            <td>${App.renderStatusBadge(c.status)}</td>
+            <td>
+              <div class="actions-cell">
+                <a href="/contas-receber/${c.id}/detalhes" class="btn btn-secondary btn-sm" title="Detalhes e Pagamentos">
+                  <i class="bi bi-eye"></i>
+                  <span>Detalhes</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  </script>
+</body>
+</html>

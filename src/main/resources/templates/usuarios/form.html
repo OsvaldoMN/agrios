@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Novo Usuário')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Cadastros')}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 650px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-person-plus"></i>
+              Cadastro de Novo Usuário do Sistema
+            </h2>
+            <a href="/dashboard" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="usuarioForm" autocomplete="off">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <div class="col-12 form-group">
+                  <label for="novoUsuarioInput" class="form-label required">Nome de Usuário (Login)</label>
+                  <input type="text" id="novoUsuarioInput" class="form-control" placeholder="Ex: operador01, joao.silva" required>
+                  <span class="form-hint">Utilizado para acessar o sistema.</span>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="novaSenhaInput" class="form-label required">Senha de Acesso</label>
+                  <input type="password" id="novaSenhaInput" class="form-control" placeholder="Digite uma senha segura" required>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="novaSenhaConfirmaInput" class="form-label required">Confirme a Senha</label>
+                  <input type="password" id="novaSenhaConfirmaInput" class="form-control" placeholder="Repita a senha digitada" required>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="perfilUsuarioSelect" class="form-label required">Perfil de Permissão</label>
+                  <select id="perfilUsuarioSelect" class="form-select" required>
+                    <option value="ADMIN">Administrador (Acesso total a cadastros, edições e operações)</option>
+                    <option value="USER">Operador / Consulta (Apenas visualização e relatórios)</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a href="/dashboard" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarUsuario" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span>Cadastrar Usuário</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("usuarioForm").addEventListener("submit", cadastrarUsuario);
+    });
+
+    async function cadastrarUsuario(e) {
+      e.preventDefault();
+
+      const username = document.getElementById("novoUsuarioInput").value.trim();
+      const password = document.getElementById("novaSenhaInput").value;
+      const confirma = document.getElementById("novaSenhaConfirmaInput").value;
+      const role = document.getElementById("perfilUsuarioSelect").value;
+
+      if (!username) {
+        App.toast("Informe o nome de usuário.", "warning");
+        return;
+      }
+
+      if (!password) {
+        App.toast("Informe a senha.", "warning");
+        return;
+      }
+
+      if (password !== confirma) {
+        App.toast("As senhas informadas não coincidem.", "warning");
+        return;
+      }
+
+      const payload = {
+        username,
+        password,
+        role
+      };
+
+      const btn = document.getElementById("btnSalvarUsuario");
+      btn.disabled = true;
+
+      try {
+        await Api.post("/auth/register", payload);
+        App.toast(`Usuário ${username} cadastrado com sucesso!`, "success");
+
+        document.getElementById("novoUsuarioInput").value = "";
+        document.getElementById("novaSenhaInput").value = "";
+        document.getElementById("novaSenhaConfirmaInput").value = "";
+
+      } catch (err) {
+        App.toast(err.message || "Erro ao cadastrar usuário. Verifique se o nome de usuário já existe.", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

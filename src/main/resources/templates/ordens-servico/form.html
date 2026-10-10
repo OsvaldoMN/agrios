@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'})}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header(${modo == 'editar' ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'})}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 960px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-file-earmark-plus"></i>
+              <span th:text="${modo == 'editar' ? 'Dados da Ordem de Serviço #' + osId : 'Abertura de Nova Ordem de Serviço'}">Formulário de OS</span>
+            </h2>
+            <a href="/ordens-servico" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="osForm">
+            <div class="card-body">
+              
+              <!-- Seção 1: Cliente e Localização -->
+              <div style="margin-bottom: 24px;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--color-primary); padding-bottom: 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px;">
+                  1. Cliente e Localização
+                </h3>
+                <div class="form-grid">
+                  <div class="col-6 form-group">
+                    <label for="osClienteSelect" class="form-label required">Cliente</label>
+                    <select id="osClienteSelect" class="form-select" required>
+                      <option value="">Selecione o cliente...</option>
+                    </select>
+                  </div>
+
+                  <div class="col-6 form-group">
+                    <label for="osFazendaSelect" class="form-label required">Fazenda</label>
+                    <select id="osFazendaSelect" class="form-select" required disabled>
+                      <option value="">Selecione um cliente primeiro...</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seção 2: Serviço, Produto e Período -->
+              <div style="margin-bottom: 24px;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--color-primary); padding-bottom: 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px;">
+                  2. Serviço, Produto e Período
+                </h3>
+                <div class="form-grid">
+                  <div class="col-6 form-group">
+                    <label for="osServicoSelect" class="form-label required">Serviço Agrícola</label>
+                    <select id="osServicoSelect" class="form-select" required>
+                      <option value="">Selecione o serviço...</option>
+                    </select>
+                  </div>
+
+                  <div class="col-6 form-group">
+                    <label for="osProdutoSelect" class="form-label">Produto Aplicado (Opcional)</label>
+                    <select id="osProdutoSelect" class="form-select">
+                      <option value="">Nenhum produto vinculado</option>
+                    </select>
+                  </div>
+
+                  <div class="col-4 form-group">
+                    <label for="osDataInicioInput" class="form-label required">Data de Início</label>
+                    <input type="date" id="osDataInicioInput" class="form-control" required>
+                  </div>
+
+                  <div class="col-4 form-group">
+                    <label for="osDataFimInput" class="form-label">Data de Término</label>
+                    <input type="date" id="osDataFimInput" class="form-control">
+                    <span class="form-hint">Obrigatória para finalizar a OS posteriormente</span>
+                  </div>
+
+                  <div class="col-4 form-group">
+                    <label for="osHectaresInput" class="form-label">Área Trabalhada (Hectares)</label>
+                    <input type="number" id="osHectaresInput" class="form-control" step="0.01" min="0.01" placeholder="Ex: 50.00">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seção 3: Máquinas Utilizadas e Valores -->
+              <div style="margin-bottom: 24px;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--color-primary); padding-bottom: 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px;">
+                  3. Máquinas Utilizadas e Valores
+                </h3>
+
+                <!-- Barra de Adição de Máquina -->
+                <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+                  <div class="form-grid" style="align-items: flex-end;">
+                    <div class="col-7 form-group">
+                      <label for="addMaquinaSelect" class="form-label">Selecionar Máquina</label>
+                      <select id="addMaquinaSelect" class="form-select">
+                        <option value="">Escolha a máquina...</option>
+                      </select>
+                    </div>
+
+                    <div class="col-3 form-group">
+                      <label for="addMaquinaValorInput" class="form-label">Valor do Serviço (R$)</label>
+                      <input type="number" id="addMaquinaValorInput" class="form-control" step="0.01" min="0.01" placeholder="Ex: 1500.00">
+                    </div>
+
+                    <div class="col-2 form-group">
+                      <button type="button" id="btnAddMaquina" class="btn btn-secondary" style="width: 100%;">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Adicionar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tabela de Máquinas Adicionadas -->
+                <div class="table-responsive">
+                  <table class="table-custom">
+                    <thead>
+                      <tr>
+                        <th>Máquina</th>
+                        <th>Identificação / Placa</th>
+                        <th style="width: 180px;">Valor (R$)</th>
+                        <th style="width: 80px; text-align: center;">Remover</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tabelaMaquinasOsBody">
+                      <tr>
+                        <td colspan="4" class="table-empty" style="padding: 24px;">
+                          <i class="bi bi-truck"></i>
+                          Nenhuma máquina adicionada à OS. Adicione pelo menos uma máquina acima.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Box de Total Calculado -->
+                <div class="admin-doc-total-box">
+                  <span class="admin-doc-total-label">Valor Total da Ordem de Serviço:</span>
+                  <span id="valorTotalCalculado" class="admin-doc-total-value">R$ 0,00</span>
+                </div>
+              </div>
+
+              <!-- Seção 4: Observações -->
+              <div>
+                <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--color-primary); padding-bottom: 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px;">
+                  4. Observações Gerais
+                </h3>
+                <div class="form-group">
+                  <textarea id="osObservacoesInput" class="form-textarea" placeholder="Informações adicionais sobre o serviço, condições climáticas, etc."></textarea>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="card-footer">
+              <a href="/ordens-servico" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarOs" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações na OS' : 'Cadastrar Ordem de Serviço'}">Salvar OS</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const osId = /*[[${osId}]]*/ null;
+
+    let clientesList = [];
+    let servicosList = [];
+    let produtosList = [];
+    let maquinasList = [];
+
+    // Lista de máquinas selecionadas na OS: [{ maquinaId, nome, identificacao, valor }]
+    let maquinasSelecionadas = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarListasBase();
+
+      configurarSelectCliente();
+      configurarAdicionarMaquina();
+
+      if (modo === "editar" && osId) {
+        await carregarDadosOs(osId);
+      } else {
+        // Data de início padrão para hoje
+        document.getElementById("osDataInicioInput").value = new Date().toISOString().split("T")[0];
+      }
+
+      document.getElementById("osForm").addEventListener("submit", salvarOs);
+    });
+
+    async function carregarListasBase() {
+      try {
+        const [clientes, servicos, produtos, maquinas] = await Promise.all([
+          Api.get("/clientes"),
+          Api.get("/servicos/ativos"),
+          Api.get("/produtos/ativos"),
+          Api.get("/maquinas/ativas")
+        ]);
+
+        clientesList = clientes || [];
+        servicosList = servicos || [];
+        produtosList = produtos || [];
+        maquinasList = maquinas || [];
+
+        // Preenche Clientes (ativos)
+        const clienteSelect = document.getElementById("osClienteSelect");
+        clientesList.filter(c => c.ativo !== false).forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = c.tipoPessoa === "JURIDICA" 
+            ? `${c.razaoSocial} (${c.nomeFantasia || c.documento})` 
+            : `${c.nome} (${App.formatDocument(c.documento)})`;
+          clienteSelect.appendChild(opt);
+        });
+
+        // Preenche Serviços
+        const servicoSelect = document.getElementById("osServicoSelect");
+        servicosList.forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = s.nome;
+          servicoSelect.appendChild(opt);
+        });
+
+        // Preenche Produtos
+        const produtoSelect = document.getElementById("osProdutoSelect");
+        produtosList.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = p.nome;
+          produtoSelect.appendChild(opt);
+        });
+
+        // Preenche Máquinas para adicionar
+        popularSelectMaquinasDisponiveis();
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    function popularSelectMaquinasDisponiveis() {
+      const select = document.getElementById("addMaquinaSelect");
+      select.innerHTML = '<option value="">Escolha a máquina...</option>';
+
+      // Filtra máquinas que ainda não foram adicionadas à OS
+      const idsJaAdicionados = maquinasSelecionadas.map(m => m.maquinaId);
+      const disponiveis = maquinasList.filter(m => !idsJaAdicionados.includes(m.id));
+
+      disponiveis.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        const idInfo = m.identificacao ? ` [${m.identificacao}]` : (m.placa ? ` [Placa: ${m.placa}]` : "");
+        opt.textContent = `${m.nome}${idInfo}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function configurarSelectCliente() {
+      const clienteSelect = document.getElementById("osClienteSelect");
+      const fazendaSelect = document.getElementById("osFazendaSelect");
+
+      clienteSelect.addEventListener("change", async () => {
+        const clienteId = clienteSelect.value;
+        fazendaSelect.innerHTML = '<option value="">Carregando fazendas...</option>';
+        fazendaSelect.disabled = true;
+
+        if (!clienteId) {
+          fazendaSelect.innerHTML = '<option value="">Selecione um cliente primeiro...</option>';
+          return;
+        }
+
+        try {
+          const fazendas = await Api.get(`/clientes/${clienteId}/fazendas`);
+          fazendaSelect.innerHTML = '<option value="">Selecione a fazenda...</option>';
+
+          const ativas = (fazendas || []).filter(f => f.ativo !== false);
+          if (ativas.length === 0) {
+            fazendaSelect.innerHTML = '<option value="">Nenhuma fazenda ativa para este cliente</option>';
+            return;
+          }
+
+          ativas.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f.id;
+            opt.textContent = `${f.nome} (${f.cidade || ''} - ${f.estado || ''})`;
+            fazendaSelect.appendChild(opt);
+          });
+
+          fazendaSelect.disabled = false;
+        } catch (err) {
+          fazendaSelect.innerHTML = '<option value="">Erro ao carregar fazendas</option>';
+          App.toast("Erro ao carregar fazendas do cliente.", "error");
+        }
+      });
+    }
+
+    function configurarAdicionarMaquina() {
+      const btnAdd = document.getElementById("btnAddMaquina");
+      const selectMaquina = document.getElementById("addMaquinaSelect");
+      const inputValor = document.getElementById("addMaquinaValorInput");
+
+      btnAdd.addEventListener("click", () => {
+        const maquinaId = parseInt(selectMaquina.value, 10);
+        const valor = parseFloat(inputValor.value);
+
+        if (!maquinaId) {
+          App.toast("Selecione uma máquina para adicionar.", "warning");
+          return;
+        }
+
+        if (!valor || valor <= 0) {
+          App.toast("Informe um valor maior que zero para a máquina.", "warning");
+          return;
+        }
+
+        const maquinaObj = maquinasList.find(m => m.id === maquinaId);
+        if (!maquinaObj) return;
+
+        maquinasSelecionadas.push({
+          maquinaId,
+          nome: maquinaObj.nome,
+          identificacao: maquinaObj.identificacao || maquinaObj.placa || "-",
+          valor
+        });
+
+        // Limpa campos
+        selectMaquina.value = "";
+        inputValor.value = "";
+
+        popularSelectMaquinasDisponiveis();
+        renderTabelaMaquinas();
+      });
+    }
+
+    function removerMaquina(maquinaId) {
+      maquinasSelecionadas = maquinasSelecionadas.filter(m => m.maquinaId !== maquinaId);
+      popularSelectMaquinasDisponiveis();
+      renderTabelaMaquinas();
+    }
+
+    function renderTabelaMaquinas() {
+      const tbody = document.getElementById("tabelaMaquinasOsBody");
+      const totalEl = document.getElementById("valorTotalCalculado");
+
+      if (maquinasSelecionadas.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="table-empty" style="padding: 24px;">
+              <i class="bi bi-truck"></i>
+              Nenhuma máquina adicionada à OS. Adicione pelo menos uma máquina acima.
+            </td>
+          </tr>`;
+        totalEl.textContent = "R$ 0,00";
+        return;
+      }
+
+      let total = 0;
+      tbody.innerHTML = maquinasSelecionadas.map(m => {
+        total += m.valor;
+        return `
+          <tr>
+            <td style="font-weight: 500;">${m.nome}</td>
+            <td style="font-family: monospace;">${m.identificacao}</td>
+            <td style="font-weight: 600;">${App.formatCurrency(m.valor)}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn btn-danger btn-sm" onclick="removerMaquina(${m.maquinaId})" title="Remover Máquina">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      totalEl.textContent = App.formatCurrency(total);
+    }
+
+    async function carregarDadosOs(id) {
+      try {
+        const os = await Api.get(`/ordens-servico/${id}`);
+        if (!os) return;
+
+        if (os.status !== "ABERTA") {
+          App.toast("Apenas ordens de serviço com status ABERTA podem ser editadas.", "warning");
+          setTimeout(() => window.location.href = `/ordens-servico/${id}/detalhes`, 1500);
+          return;
+        }
+
+        // Cliente
+        const clienteSelect = document.getElementById("osClienteSelect");
+        clienteSelect.value = os.clienteId;
+
+        // Dispara evento para carregar as fazendas e aguarda
+        const fazendaSelect = document.getElementById("osFazendaSelect");
+        const fazendas = await Api.get(`/clientes/${os.clienteId}/fazendas`);
+        fazendaSelect.innerHTML = '<option value="">Selecione a fazenda...</option>';
+        (fazendas || []).forEach(f => {
+          const opt = document.createElement("option");
+          opt.value = f.id;
+          opt.textContent = `${f.nome} (${f.cidade || ''} - ${f.estado || ''})`;
+          fazendaSelect.appendChild(opt);
+        });
+        fazendaSelect.disabled = false;
+        fazendaSelect.value = os.fazendaId;
+
+        // Serviço e Produto
+        document.getElementById("osServicoSelect").value = os.servicoId;
+        if (os.produtoId) {
+          document.getElementById("osProdutoSelect").value = os.produtoId;
+        }
+
+        // Datas e Hectares
+        document.getElementById("osDataInicioInput").value = os.dataInicio || "";
+        document.getElementById("osDataFimInput").value = os.dataFim || "";
+        document.getElementById("osHectaresInput").value = os.hectares || "";
+        document.getElementById("osObservacoesInput").value = os.observacoes || "";
+
+        // Máquinas
+        maquinasSelecionadas = (os.maquinas || []).map(item => ({
+          maquinaId: item.maquinaId,
+          nome: item.maquinaNome,
+          identificacao: item.identificacao || "-",
+          valor: item.valor
+        }));
+
+        popularSelectMaquinasDisponiveis();
+        renderTabelaMaquinas();
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarOs(e) {
+      e.preventDefault();
+
+      const clienteId = parseInt(document.getElementById("osClienteSelect").value, 10);
+      const fazendaId = parseInt(document.getElementById("osFazendaSelect").value, 10);
+      const servicoId = parseInt(document.getElementById("osServicoSelect").value, 10);
+      const produtoVal = document.getElementById("osProdutoSelect").value;
+      const produtoId = produtoVal ? parseInt(produtoVal, 10) : null;
+      const dataInicio = document.getElementById("osDataInicioInput").value;
+      const dataFim = document.getElementById("osDataFimInput").value;
+      const hectaresVal = document.getElementById("osHectaresInput").value;
+      const hectares = hectaresVal ? parseFloat(hectaresVal) : null;
+      const observacoes = document.getElementById("osObservacoesInput").value.trim();
+
+      if (!clienteId) {
+        App.toast("Selecione o cliente.", "warning");
+        return;
+      }
+
+      if (!fazendaId) {
+        App.toast("Selecione a fazenda.", "warning");
+        return;
+      }
+
+      if (!servicoId) {
+        App.toast("Selecione o serviço.", "warning");
+        return;
+      }
+
+      if (!dataInicio) {
+        App.toast("Data de início é obrigatória.", "warning");
+        return;
+      }
+
+      if (dataFim && dataFim < dataInicio) {
+        App.toast("A data de término não pode ser anterior à data de início.", "warning");
+        return;
+      }
+
+      if (maquinasSelecionadas.length === 0) {
+        App.toast("Adicione pelo menos uma máquina à Ordem de Serviço.", "warning");
+        return;
+      }
+
+      const payload = {
+        clienteId,
+        fazendaId,
+        servicoId,
+        produtoId: produtoId || null,
+        dataInicio,
+        dataFim: dataFim || null,
+        hectares: hectares || null,
+        maquinas: maquinasSelecionadas.map(m => ({
+          maquinaId: m.maquinaId,
+          valor: m.valor
+        })),
+        observacoes: observacoes || null
+      };
+
+      const btn = document.getElementById("btnSalvarOs");
+      btn.disabled = true;
+
+      try {
+        let res;
+        if (modo === "editar") {
+          res = await Api.put(`/ordens-servico/${osId}`, payload);
+          App.toast(`OS #${osId} atualizada com sucesso!`, "success");
+        } else {
+          res = await Api.post("/ordens-servico", payload);
+          App.toast("Ordem de Serviço criada com sucesso!", "success");
+        }
+
+        const idDestino = res && res.id ? res.id : (osId || "");
+        setTimeout(() => {
+          window.location.href = `/ordens-servico/${idDestino}/detalhes`;
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

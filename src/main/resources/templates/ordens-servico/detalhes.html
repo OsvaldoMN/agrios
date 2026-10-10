@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Visualização da Ordem de Serviço')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Ordem de Serviço')}"></header>
+
+      <main class="app-content">
+
+        <!-- Barra de Ações Superior -->
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto 16px auto; flex-wrap: wrap; gap: 12px;">
+          <a href="/ordens-servico" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+            <span>Voltar para a Lista</span>
+          </a>
+
+          <div style="display: flex; gap: 8px;" id="acoesOsBar">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+              <i class="bi bi-printer"></i>
+              <span>Imprimir</span>
+            </button>
+            <a id="btnEditarOs" href="#" class="btn btn-secondary btn-sm" style="display: none;">
+              <i class="bi bi-pencil"></i>
+              <span>Editar OS</span>
+            </a>
+            <button id="btnFinalizarOs" type="button" class="btn btn-success btn-sm" style="display: none;">
+              <i class="bi bi-check-circle"></i>
+              <span>Finalizar OS</span>
+            </button>
+            <button id="btnCancelarOs" type="button" class="btn btn-danger btn-sm" style="display: none;">
+              <i class="bi bi-x-circle"></i>
+              <span>Cancelar OS</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Documento Administrativo da OS -->
+        <div class="admin-doc" id="documentoOs">
+          
+          <!-- Cabeçalho do Documento -->
+          <div class="admin-doc-header">
+            <div>
+              <div class="admin-doc-brand">
+                Agri<span>OS</span>
+                <small>Gestão de Ordens de Serviço Agrícolas</small>
+              </div>
+            </div>
+            <div class="admin-doc-meta">
+              <div class="admin-doc-id" id="docOsNumero">OS #---</div>
+              <div style="margin-top: 4px;" id="docOsStatusBadge">-</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" id="docOsCriadoEm">-</div>
+            </div>
+          </div>
+
+          <!-- Seção 1: Cliente e Localização -->
+          <div class="admin-doc-section">
+            <div class="admin-doc-section-title">Dados do Cliente e Fazenda</div>
+            <div class="admin-doc-grid">
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Cliente</span>
+                <span id="docClienteNome" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Fazenda</span>
+                <span id="docFazendaNome" class="admin-doc-value">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção 2: Especificação do Serviço Agrícola -->
+          <div class="admin-doc-section">
+            <div class="admin-doc-section-title">Serviço Agrícola Realizado</div>
+            <div class="admin-doc-grid">
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Serviço</span>
+                <span id="docServicoNome" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Produto Aplicado</span>
+                <span id="docProdutoNome" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Data de Início</span>
+                <span id="docDataInicio" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Data de Término</span>
+                <span id="docDataFim" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Área / Hectares</span>
+                <span id="docHectares" class="admin-doc-value">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção 3: Máquinas Utilizadas -->
+          <div class="admin-doc-section">
+            <div class="admin-doc-section-title">Equipamentos e Máquinas Alocadas</div>
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Máquina</th>
+                    <th>Identificação / Placa</th>
+                    <th style="text-align: right;">Valor</th>
+                  </tr>
+                </thead>
+                <tbody id="docTabelaMaquinasBody">
+                  <tr>
+                    <td colspan="4" class="table-empty">Nenhuma máquina discriminada.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="admin-doc-total-box">
+              <span class="admin-doc-total-label">Total da Ordem de Serviço:</span>
+              <span id="docValorTotal" class="admin-doc-total-value">R$ 0,00</span>
+            </div>
+          </div>
+
+          <!-- Seção 4: Observações -->
+          <div class="admin-doc-section" style="margin-bottom: 0;">
+            <div class="admin-doc-section-title">Observações Administrativas</div>
+            <div id="docObservacoes" style="font-size: 0.9rem; color: var(--text-main); white-space: pre-wrap; padding: 12px; background-color: #fafbfc; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+              Nenhuma observação informada.
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal para Finalizar OS -->
+  <div id="modalFinalizarOs" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Finalizar Ordem de Serviço</h3>
+        <button id="btnFecharModalFinalizar" class="btn-close-modal">&times;</button>
+      </div>
+      <form id="formFinalizarOs">
+        <div class="modal-body">
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
+            Ao finalizar a OS, ela não poderá mais ser editada e uma <strong>Conta a Receber</strong> será gerada automaticamente no módulo Financeiro com o valor total da OS.
+          </p>
+
+          <div class="form-group">
+            <label for="dataVencimentoOsInput" class="form-label required">Data de Vencimento da Fatura</label>
+            <input type="date" id="dataVencimentoOsInput" class="form-control" required>
+            <span class="form-hint">Data para o cliente pagar a conta.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btnCancelarModalFinalizar" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btnConfirmarFinalizarOs" class="btn btn-success">
+            <i class="bi bi-check-circle"></i>
+            <span>Confirmar e Finalizar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const osId = /*[[${osId}]]*/ null;
+    let osAtual = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (osId) {
+        await carregarDetalhesOs();
+        configurarModalFinalizar();
+      }
+    });
+
+    async function carregarDetalhesOs() {
+      try {
+        const os = await Api.get(`/ordens-servico/${osId}`);
+        if (!os) return;
+        osAtual = os;
+
+        // Cabeçalho
+        document.getElementById("docOsNumero").textContent = `OS #${os.id}`;
+        document.getElementById("docOsStatusBadge").innerHTML = App.renderStatusBadge(os.status);
+        document.getElementById("docOsCriadoEm").textContent = `Emitida em: ${App.formatDateTime(os.criadoEm)}`;
+
+        // Cliente e Fazenda
+        document.getElementById("docClienteNome").textContent = os.clienteNome || "-";
+        document.getElementById("docFazendaNome").textContent = os.fazendaNome || "-";
+
+        // Serviço e Produto
+        document.getElementById("docServicoNome").textContent = os.servicoNome || "-";
+        document.getElementById("docProdutoNome").textContent = os.produtoNome || "Nenhum";
+        document.getElementById("docDataInicio").textContent = App.formatDate(os.dataInicio);
+        document.getElementById("docDataFim").textContent = App.formatDate(os.dataFim);
+        document.getElementById("docHectares").textContent = os.hectares ? `${Number(os.hectares).toLocaleString('pt-BR')} ha` : "-";
+
+        // Máquinas
+        const tbody = document.getElementById("docTabelaMaquinasBody");
+        if (os.maquinas && os.maquinas.length > 0) {
+          tbody.innerHTML = os.maquinas.map((m, idx) => `
+            <tr>
+              <td>${idx + 1}</td>
+              <td style="font-weight: 500;">${m.maquinaNome}</td>
+              <td style="font-family: monospace;">${m.identificacao || "-"}</td>
+              <td style="text-align: right; font-weight: 600;">${App.formatCurrency(m.valor)}</td>
+            </tr>
+          `).join("");
+        } else {
+          tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Nenhuma máquina discriminada.</td></tr>`;
+        }
+
+        document.getElementById("docValorTotal").textContent = App.formatCurrency(os.valorTotal);
+        document.getElementById("docObservacoes").textContent = os.observacoes || "Nenhuma observação informada.";
+
+        // Configuração dos botões de ação
+        const btnEditar = document.getElementById("btnEditarOs");
+        const btnFinalizar = document.getElementById("btnFinalizarOs");
+        const btnCancelar = document.getElementById("btnCancelarOs");
+
+        if (os.status === "ABERTA") {
+          btnEditar.style.display = "inline-flex";
+          btnEditar.href = `/ordens-servico/${os.id}/editar`;
+
+          btnFinalizar.style.display = "inline-flex";
+          btnFinalizar.onclick = () => abrirModalFinalizar();
+
+          btnCancelar.style.display = "inline-flex";
+          btnCancelar.onclick = () => confirmarCancelarOs();
+        } else if (os.status === "FINALIZADA") {
+          btnCancelar.style.display = "inline-flex";
+          btnCancelar.onclick = () => confirmarCancelarOs();
+        }
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    function abrirModalFinalizar() {
+      if (!osAtual) return;
+      if (!osAtual.dataFim) {
+        App.toast("Para finalizar a OS, preencha primeiro a data de término através do botão Editar.", "warning");
+        return;
+      }
+
+      const modal = document.getElementById("modalFinalizarOs");
+      document.getElementById("dataVencimentoOsInput").value = new Date().toISOString().split("T")[0];
+      modal.classList.add("active");
+    }
+
+    function configurarModalFinalizar() {
+      const modal = document.getElementById("modalFinalizarOs");
+      const fechar = () => modal.classList.remove("active");
+
+      document.getElementById("btnFecharModalFinalizar").onclick = fechar;
+      document.getElementById("btnCancelarModalFinalizar").onclick = fechar;
+
+      document.getElementById("formFinalizarOs").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const dataVencimento = document.getElementById("dataVencimentoOsInput").value;
+        if (!dataVencimento) return;
+
+        const btn = document.getElementById("btnConfirmarFinalizarOs");
+        btn.disabled = true;
+
+        try {
+          await Api.patch(`/ordens-servico/${osId}/finalizar`, { dataVencimento });
+          fechar();
+          App.toast(`OS #${osId} finalizada com sucesso! Conta a receber gerada no Financeiro.`, "success");
+          await carregarDetalhesOs();
+        } catch (err) {
+          App.toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+
+    function confirmarCancelarOs() {
+      App.confirm({
+        title: "Cancelar Ordem de Serviço",
+        message: `Deseja realmente cancelar a OS #${osId}? Caso exista uma conta a receber gerada, ela também será cancelada.`,
+        confirmText: "Sim, Cancelar OS",
+        confirmClass: "btn-danger",
+        onConfirm: async () => {
+          try {
+            await Api.patch(`/ordens-servico/${osId}/cancelar`);
+            App.toast(`OS #${osId} cancelada com sucesso.`, "info");
+            await carregarDetalhesOs();
+          } catch (err) {
+            App.toast(err.message, "error");
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
