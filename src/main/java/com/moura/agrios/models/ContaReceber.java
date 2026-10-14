@@ -47,6 +47,9 @@ public class ContaReceber {
     @Column(name = "valor",nullable = false,precision = 15,scale = 2)
     private BigDecimal valor;
 
+    @Column(name = "valor_desconto", nullable = false, precision = 15, scale = 2)
+    private BigDecimal valorDesconto = BigDecimal.ZERO;
+
 
     @Column(name = "data_emissao", nullable = false)
     private LocalDate dataEmissao;

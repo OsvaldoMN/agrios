@@ -20,6 +20,14 @@
           </a>
 
           <div style="display: flex; gap: 8px;">
+            <button id="btnAbrirModalDesconto" type="button" class="btn btn-secondary btn-sm" style="display: none;">
+              <i class="bi bi-tag"></i>
+              <span>Aplicar Desconto</span>
+            </button>
+            <button id="btnCancelarConta" type="button" class="btn btn-danger btn-sm" style="display: none;">
+              <i class="bi bi-x-circle"></i>
+              <span>Cancelar Recebimento</span>
+            </button>
             <button id="btnAbrirModalPagamento" type="button" class="btn btn-success btn-sm" style="display: none;">
               <i class="bi bi-cash-coin"></i>
               <span>Registrar Pagamento</span>
@@ -69,21 +77,31 @@
               </div>
 
               <!-- Resumo Financeiro da Conta -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
                 
                 <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
-                  <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Valor Nominal</span>
-                  <div id="contaValorNominal" style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin-top: 4px;">R$ 0,00</div>
+                  <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Valor Original</span>
+                  <div id="contaValorNominal" style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-top: 4px;">R$ 0,00</div>
+                </div>
+
+                <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 14px;">
+                  <span style="font-size: 0.72rem; text-transform: uppercase; color: #991b1b; font-weight: 600;">Desconto Aplicado</span>
+                  <div id="contaValorDesconto" style="font-size: 1.2rem; font-weight: 700; color: var(--color-danger); margin-top: 4px;">R$ 0,00</div>
+                </div>
+
+                <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-sm); padding: 14px;">
+                  <span style="font-size: 0.72rem; text-transform: uppercase; color: #1e40af; font-weight: 600;">Valor Com Desconto</span>
+                  <div id="contaValorFinal" style="font-size: 1.2rem; font-weight: 700; color: #1d4ed8; margin-top: 4px;">R$ 0,00</div>
                 </div>
 
                 <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 14px;">
                   <span style="font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 600;">Total Recebido</span>
-                  <div id="contaTotalRecebido" style="font-size: 1.3rem; font-weight: 700; color: var(--color-success); margin-top: 4px;">R$ 0,00</div>
+                  <div id="contaTotalRecebido" style="font-size: 1.2rem; font-weight: 700; color: var(--color-success); margin-top: 4px;">R$ 0,00</div>
                 </div>
 
                 <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: var(--radius-sm); padding: 14px;">
                   <span style="font-size: 0.72rem; text-transform: uppercase; color: #854d0e; font-weight: 600;">Saldo Restante</span>
-                  <div id="contaSaldoRestante" style="font-size: 1.3rem; font-weight: 700; color: #a16207; margin-top: 4px;">R$ 0,00</div>
+                  <div id="contaSaldoRestante" style="font-size: 1.2rem; font-weight: 700; color: #a16207; margin-top: 4px;">R$ 0,00</div>
                 </div>
 
               </div>
@@ -195,6 +213,76 @@
     </div>
   </div>
 
+  <!-- Modal para Aplicar Desconto -->
+  <div id="modalAplicarDesconto" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalDescontoTitulo">Aplicar Desconto</h3>
+        <button id="btnFecharModalDesconto" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="formAplicarDesconto">
+        <div class="modal-body">
+          <!-- Painel com Valores da Conta -->
+          <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+              <div>
+                <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Valor Original</span>
+                <div id="modalDescontoValorOriginal" style="font-weight: 700; color: var(--text-main); font-size: 1.05rem;">R$ 0,00</div>
+              </div>
+              <div>
+                <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Total Recebido</span>
+                <div id="modalDescontoValorRecebido" style="font-weight: 700; color: var(--color-success); font-size: 1.05rem;">R$ 0,00</div>
+              </div>
+              <div>
+                <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Desconto Atual</span>
+                <div id="modalDescontoAtual" style="font-weight: 600; color: var(--text-main);">R$ 0,00</div>
+              </div>
+              <div>
+                <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Desconto Máximo</span>
+                <div id="modalDescontoMaximo" style="font-weight: 700; color: var(--color-warning);">R$ 0,00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo para Informar o Desconto -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="inputValorDesconto" class="form-label required">Novo Valor do Desconto (R$)</label>
+            <input 
+              type="number" 
+              id="inputValorDesconto" 
+              class="form-control" 
+              step="0.01" 
+              min="0.01" 
+              required 
+              placeholder="0,00"
+            >
+            <span class="form-hint">Informe o valor total de desconto concedido a esta conta.</span>
+          </div>
+
+          <!-- Valores Atualizados (Tempo Real) -->
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 12px; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="color: #166534; font-weight: 500;">Valor Atualizado da Conta:</span>
+              <strong id="modalDescontoValorAtualizado" style="color: #166534; font-size: 0.95rem;">R$ 0,00</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #166534; font-weight: 500;">Saldo Pendente Resultante:</span>
+              <strong id="modalDescontoNovoSaldo" style="color: #166534; font-size: 0.95rem;">R$ 0,00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelarModalDesconto" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btnSalvarDesconto" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i>
+            <span>Salvar Desconto</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div th:replace="~{layout/base :: modal_confirm}"></div>
   <div th:replace="~{layout/base :: toasts}"></div>
   <div th:replace="~{layout/base :: scripts}"></div>
@@ -205,8 +293,10 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       if (contaId) {
-        await carregarDetalhesConta();
         configurarModalPagamento();
+        configurarModalDesconto();
+        configurarBotaoCancelamento();
+        await carregarDetalhesConta();
       }
     });
 
@@ -233,7 +323,10 @@
         document.getElementById("contaDataVencimento").textContent = App.formatDate(conta.dataVencimento);
         document.getElementById("contaDescricao").textContent = conta.descricao || "-";
 
+        // Resumo Financeiro
         document.getElementById("contaValorNominal").textContent = App.formatCurrency(conta.valor);
+        document.getElementById("contaValorDesconto").textContent = App.formatCurrency(conta.valorDesconto || 0);
+        document.getElementById("contaValorFinal").textContent = App.formatCurrency(conta.valorFinal);
         document.getElementById("contaTotalRecebido").textContent = App.formatCurrency(conta.valorRecebido);
         document.getElementById("contaSaldoRestante").textContent = App.formatCurrency(conta.saldo);
 
@@ -262,13 +355,33 @@
             </tr>`;
         }
 
-        // Habilita botão de registrar pagamento apenas se tiver saldo e não for cancelada
+        const isCancelada = conta.status === "CANCELADA";
+        const isQuitada = conta.status === "QUITADA";
+
+        // Botão de Pagamento
         const btnPagamento = document.getElementById("btnAbrirModalPagamento");
-        if (conta.status !== "QUITADA" && conta.status !== "CANCELADA" && Number(conta.saldo) > 0) {
+        if (!isQuitada && !isCancelada && Number(conta.saldo) > 0) {
           btnPagamento.style.display = "inline-flex";
           btnPagamento.onclick = () => abrirModalPagamento();
         } else {
           btnPagamento.style.display = "none";
+        }
+
+        // Botão de Desconto
+        const btnDesconto = document.getElementById("btnAbrirModalDesconto");
+        if (!isQuitada && !isCancelada) {
+          btnDesconto.style.display = "inline-flex";
+          btnDesconto.onclick = () => abrirModalDesconto();
+        } else {
+          btnDesconto.style.display = "none";
+        }
+
+        // Botão de Cancelamento
+        const btnCancelar = document.getElementById("btnCancelarConta");
+        if (!isCancelada && !isQuitada) {
+          btnCancelar.style.display = "inline-flex";
+        } else {
+          btnCancelar.style.display = "none";
         }
 
       } catch (err) {
@@ -344,6 +457,139 @@
           btn.disabled = false;
         }
       });
+    }
+
+    // Modal de Desconto
+    function abrirModalDesconto() {
+      if (!contaAtual) return;
+
+      if (contaAtual.status === "QUITADA" || contaAtual.status === "CANCELADA") {
+        App.toast(`Não é possível aplicar desconto em uma conta ${contaAtual.status.toLowerCase()}.`, "warning");
+        return;
+      }
+
+      document.getElementById("modalDescontoTitulo").textContent = `Aplicar Desconto - Conta #${contaAtual.id}`;
+
+      const valorOriginal = Number(contaAtual.valor) || 0;
+      const valorRecebido = Number(contaAtual.valorRecebido) || 0;
+      const descontoAtual = Number(contaAtual.valorDesconto) || 0;
+      const maxDesconto = Math.max(0, valorOriginal - valorRecebido);
+
+      document.getElementById("modalDescontoValorOriginal").textContent = App.formatCurrency(valorOriginal);
+      document.getElementById("modalDescontoValorRecebido").textContent = App.formatCurrency(valorRecebido);
+      document.getElementById("modalDescontoAtual").textContent = App.formatCurrency(descontoAtual);
+      document.getElementById("modalDescontoMaximo").textContent = App.formatCurrency(maxDesconto);
+
+      const input = document.getElementById("inputValorDesconto");
+      input.value = descontoAtual > 0 ? descontoAtual.toFixed(2) : "";
+      input.max = maxDesconto.toFixed(2);
+
+      atualizarCalculoDesconto();
+
+      document.getElementById("modalAplicarDesconto").classList.add("active");
+      input.focus();
+    }
+
+    function fecharModalDesconto() {
+      document.getElementById("modalAplicarDesconto").classList.remove("active");
+    }
+
+    function atualizarCalculoDesconto() {
+      if (!contaAtual) return;
+
+      const valorOriginal = Number(contaAtual.valor) || 0;
+      const valorRecebido = Number(contaAtual.valorRecebido) || 0;
+      const input = document.getElementById("inputValorDesconto");
+      const novoDesconto = parseFloat(input.value) || 0;
+
+      const valorAtualizado = Math.max(0, valorOriginal - novoDesconto);
+      const novoSaldo = Math.max(0, valorAtualizado - valorRecebido);
+
+      document.getElementById("modalDescontoValorAtualizado").textContent = App.formatCurrency(valorAtualizado);
+      document.getElementById("modalDescontoNovoSaldo").textContent = App.formatCurrency(novoSaldo);
+    }
+
+    function configurarModalDesconto() {
+      const btnFechar = document.getElementById("btnFecharModalDesconto");
+      const btnCancelar = document.getElementById("btnCancelarModalDesconto");
+      const input = document.getElementById("inputValorDesconto");
+      const form = document.getElementById("formAplicarDesconto");
+
+      btnFechar.onclick = fecharModalDesconto;
+      btnCancelar.onclick = fecharModalDesconto;
+      input.addEventListener("input", atualizarCalculoDesconto);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!contaAtual) return;
+
+        const valorOriginal = Number(contaAtual.valor) || 0;
+        const valorRecebido = Number(contaAtual.valorRecebido) || 0;
+        const maxDesconto = valorOriginal - valorRecebido;
+        const novoDesconto = parseFloat(input.value);
+
+        if (isNaN(novoDesconto) || novoDesconto <= 0) {
+          App.toast("Informe um valor de desconto válido maior que zero.", "warning");
+          return;
+        }
+
+        if (novoDesconto > maxDesconto) {
+          App.toast(`O desconto não pode ser superior ao saldo permitido de ${App.formatCurrency(maxDesconto)}.`, "warning");
+          return;
+        }
+
+        const btnSalvar = document.getElementById("btnSalvarDesconto");
+        btnSalvar.disabled = true;
+
+        try {
+          await Api.patch(`/contas-receber/${contaId}/desconto`, { valor: novoDesconto });
+          fecharModalDesconto();
+          App.toast("Desconto aplicado com sucesso!", "success");
+          await carregarDetalhesConta();
+        } catch (err) {
+          App.toast(err.message, "error");
+        } finally {
+          btnSalvar.disabled = false;
+        }
+      });
+    }
+
+    // Cancelamento
+    function configurarBotaoCancelamento() {
+      const btnCancelar = document.getElementById("btnCancelarConta");
+      btnCancelar.onclick = () => {
+        if (!contaAtual) return;
+
+        if (contaAtual.status === "CANCELADA") {
+          App.toast("Esta conta já está cancelada.", "warning");
+          return;
+        }
+
+        if (contaAtual.status === "QUITADA") {
+          App.toast("Esta conta já está quitada e não pode ser cancelada.", "warning");
+          return;
+        }
+
+        const mensagem = contaAtual.origem === "ORDEM_SERVICO"
+          ? `Deseja realmente cancelar o recebimento da Conta #${contaAtual.id} (vinculada à OS #${contaAtual.ordemServicoId})? O cancelamento do recebimento não altera a Ordem de Serviço.`
+          : `Deseja realmente cancelar a Conta a Receber #${contaAtual.id} no valor de ${App.formatCurrency(contaAtual.valor)}?`;
+
+        App.confirm({
+          title: "Cancelar Recebimento",
+          message: mensagem,
+          confirmText: "Sim, Cancelar",
+          confirmClass: "btn-danger",
+          onConfirm: async () => {
+            try {
+              await Api.patch(`/contas-receber/${contaId}/cancelar`);
+              App.toast("Recebimento cancelado com sucesso!", "success");
+              await carregarDetalhesConta();
+            } catch (err) {
+              App.toast(err.message, "error");
+            }
+          }
+        });
+      };
     }
   </script>
 </body>
