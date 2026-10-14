@@ -164,8 +164,21 @@ public class WebViewController {
     }
 
     // --- USUÁRIOS ---
+    @GetMapping(value = "/usuarios", produces = MediaType.TEXT_HTML_VALUE)
+    public String usuarios() {
+        return "usuarios/index";
+    }
+
     @GetMapping("/usuarios/novo")
-    public String novoUsuario() {
+    public String novoUsuario(Model model) {
+        model.addAttribute("modo", "novo");
+        return "usuarios/form";
+    }
+
+    @GetMapping("/usuarios/{id}/editar")
+    public String editarUsuario(@PathVariable String id, Model model) {
+        model.addAttribute("modo", "editar");
+        model.addAttribute("usuarioId", id);
         return "usuarios/form";
     }
 }

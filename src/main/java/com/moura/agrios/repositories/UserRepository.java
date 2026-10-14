@@ -7,4 +7,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 public interface UserRepository extends JpaRepository<Users, String> {
     
     UserDetails findByUsername(String username);
+
+    boolean existsByUsernameIgnoreCaseAndIdNot(String username, String id);
 }

@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
@@ -19,6 +20,7 @@ import jakarta.servlet.DispatcherType;
 
 @Configuration
 @EnableWebSecurity 
+@EnableMethodSecurity
 public class SecurityConfigurations {
 
     @Autowired 
@@ -43,8 +45,9 @@ public class SecurityConfigurations {
     // Login
     .requestMatchers(HttpMethod.POST,"/auth/login").permitAll()
 
-    // Registro
+    // Registro e Gerenciamento de Usuários: apenas ADMIN
     .requestMatchers(HttpMethod.POST,"/auth/register").hasRole("ADMIN")
+    .requestMatchers(HttpMethod.PUT, "/usuarios/**").hasRole("ADMIN")
 
     // Cadastrar cliente: apenas aDMIN
     .requestMatchers(HttpMethod.POST,"/clientes").hasRole("ADMIN")

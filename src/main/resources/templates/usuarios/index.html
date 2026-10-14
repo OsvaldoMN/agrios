@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Usuários')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Usuários')}"></header>
+
+      <main class="app-content">
+
+        <!-- Barra de Ações e Filtro -->
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              id="usuarioSearchInput" 
+              class="form-control" 
+              placeholder="Pesquisar por login ou perfil..."
+            >
+          </div>
+
+          <a href="/usuarios/novo" class="btn btn-primary">
+            <i class="bi bi-person-plus"></i>
+            <span>Novo Usuário</span>
+          </a>
+        </div>
+
+        <!-- Tabela de Usuários -->
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Nome de Usuário (Login)</th>
+                    <th>Perfil de Acesso</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaUsuariosBody">
+                  <tr>
+                    <td colspan="4" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando usuários...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    let usuariosCache = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarUsuarios();
+
+      // Busca dinâmica no frontend
+      const searchInput = document.getElementById("usuarioSearchInput");
+      searchInput.addEventListener("input", (e) => {
+        const termo = e.target.value.toLowerCase().trim();
+        if (!termo) {
+          renderTabela(usuariosCache);
+          return;
+        }
+
+        const filtrados = usuariosCache.filter(u => {
+          const username = (u.username || "").toLowerCase();
+          const role = (u.role || "").toLowerCase();
+          const status = u.ativo ? "ativo" : "inativo";
+          return username.includes(termo) || role.includes(termo) || status.includes(termo);
+        });
+
+        renderTabela(filtrados);
+      });
+    });
+
+    async function carregarUsuarios() {
+      const tbody = document.getElementById("tabelaUsuariosBody");
+      try {
+        const data = await Api.get("/usuarios");
+        usuariosCache = Array.isArray(data) ? data : [];
+        renderTabela(usuariosCache);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("tabelaUsuariosBody");
+
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="table-empty">
+              <i class="bi bi-person-x"></i>
+              Nenhum usuário cadastrado.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(u => {
+        const roleBadge = u.role === "ADMIN"
+          ? '<span style="font-size: 0.75rem; font-weight: 700; color: #1e3a8a; background-color: #dbeafe; padding: 3px 8px; border-radius: 4px;">ADMIN</span>'
+          : '<span style="font-size: 0.75rem; font-weight: 600; color: #475569; background-color: #f1f5f9; padding: 3px 8px; border-radius: 4px;">OPERADOR</span>';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-person-circle" style="color: var(--text-muted); font-size: 1.1rem;"></i>
+                <span>${u.username}</span>
+              </div>
+            </td>
+            <td>${roleBadge}</td>
+            <td>${App.renderStatusBadge(u.ativo ? 'ATIVO' : 'INATIVO')}</td>
+            <td>
+              <div class="actions-cell">
+                <a href="/usuarios/${u.id}/editar" class="btn btn-secondary btn-sm" title="Editar Usuário">
+                  <i class="bi bi-pencil"></i>
+                  <span>Editar</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  </script>
+</body>
+</html>
