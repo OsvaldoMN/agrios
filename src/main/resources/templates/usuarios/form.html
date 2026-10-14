@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/base :: html_head('Novo Usuário')}"></head>
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Usuário' : 'Novo Usuário'})}"></head>
 
 <body>
   <div class="app-container">
@@ -15,10 +15,10 @@
         <div class="card" style="max-width: 650px; margin: 0 auto;">
           <div class="card-header">
             <h2 class="card-title">
-              <i class="bi bi-person-plus"></i>
-              Cadastro de Novo Usuário do Sistema
+              <i th:class="${modo == 'editar' ? 'bi bi-person-gear' : 'bi bi-person-plus'}"></i>
+              <span th:text="${modo == 'editar' ? 'Edição de Usuário' : 'Cadastro de Novo Usuário'}">Formulário de Usuário</span>
             </h2>
-            <a href="/dashboard" class="btn btn-secondary btn-sm">
+            <a href="/usuarios" class="btn btn-secondary btn-sm">
               <i class="bi bi-arrow-left"></i>
               <span>Voltar</span>
             </a>
@@ -35,12 +35,13 @@
                 </div>
 
                 <div class="col-12 form-group">
-                  <label for="novaSenhaInput" class="form-label required">Senha de Acesso</label>
+                  <label for="novaSenhaInput" id="labelSenha" class="form-label required">Senha de Acesso</label>
                   <input type="password" id="novaSenhaInput" class="form-control" placeholder="Digite uma senha segura" required>
+                  <span class="form-hint" id="senhaHint" style="display: none; color: var(--color-earth);">Deixe em branco para manter a senha atual.</span>
                 </div>
 
                 <div class="col-12 form-group">
-                  <label for="novaSenhaConfirmaInput" class="form-label required">Confirme a Senha</label>
+                  <label for="novaSenhaConfirmaInput" id="labelConfirmaSenha" class="form-label required">Confirme a Senha</label>
                   <input type="password" id="novaSenhaConfirmaInput" class="form-control" placeholder="Repita a senha digitada" required>
                 </div>
 
@@ -52,14 +53,22 @@
                   </select>
                 </div>
 
+                <div class="col-12 form-group" id="grupoAtivo" th:style="${modo == 'editar' ? 'display: block;' : 'display: none;'}">
+                  <label class="form-check">
+                    <input type="checkbox" id="ativoUsuarioInput" checked>
+                    <span style="font-weight: 500;">Usuário Ativo (Permitir acesso ao sistema)</span>
+                  </label>
+                  <span class="form-hint">Usuários inativos não conseguem autenticar nem acessar nenhuma área do sistema.</span>
+                </div>
+
               </div>
             </div>
 
             <div class="card-footer">
-              <a href="/dashboard" class="btn btn-secondary">Cancelar</a>
+              <a href="/usuarios" class="btn btn-secondary">Cancelar</a>
               <button type="submit" id="btnSalvarUsuario" class="btn btn-primary">
                 <i class="bi bi-check2"></i>
-                <span>Cadastrar Usuário</span>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações' : 'Cadastrar Usuário'}">Cadastrar Usuário</span>
               </button>
             </div>
           </form>
@@ -73,55 +82,126 @@
   <div th:replace="~{layout/base :: toasts}"></div>
   <div th:replace="~{layout/base :: scripts}"></div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("usuarioForm").addEventListener("submit", cadastrarUsuario);
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const usuarioId = /*[[${usuarioId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const senhaInput = document.getElementById("novaSenhaInput");
+      const confirmaInput = document.getElementById("novaSenhaConfirmaInput");
+      const labelSenha = document.getElementById("labelSenha");
+      const labelConfirmaSenha = document.getElementById("labelConfirmaSenha");
+      const senhaHint = document.getElementById("senhaHint");
+      const grupoAtivo = document.getElementById("grupoAtivo");
+
+      if (modo === "editar") {
+        // No modo edição, a senha é opcional
+        senhaInput.removeAttribute("required");
+        confirmaInput.removeAttribute("required");
+        senhaInput.placeholder = "Deixe em branco para não alterar a senha";
+        confirmaInput.placeholder = "Confirme a nova senha apenas se alterá-la";
+        labelSenha.classList.remove("required");
+        labelConfirmaSenha.classList.remove("required");
+        senhaHint.style.display = "block";
+        if (grupoAtivo) grupoAtivo.style.display = "block";
+
+        if (usuarioId) {
+          await carregarDadosUsuario(usuarioId);
+        }
+      }
+
+      document.getElementById("usuarioForm").addEventListener("submit", salvarUsuario);
     });
 
-    async function cadastrarUsuario(e) {
+    async function carregarDadosUsuario(id) {
+      try {
+        const u = await Api.get(`/usuarios/${id}`);
+        if (!u) return;
+
+        document.getElementById("novoUsuarioInput").value = u.username || "";
+        document.getElementById("perfilUsuarioSelect").value = u.role || "USER";
+        document.getElementById("ativoUsuarioInput").checked = u.ativo !== false;
+      } catch (err) {
+        App.toast(err.message || "Erro ao carregar dados do usuário.", "error");
+      }
+    }
+
+    async function salvarUsuario(e) {
       e.preventDefault();
 
       const username = document.getElementById("novoUsuarioInput").value.trim();
       const password = document.getElementById("novaSenhaInput").value;
       const confirma = document.getElementById("novaSenhaConfirmaInput").value;
       const role = document.getElementById("perfilUsuarioSelect").value;
+      const ativo = document.getElementById("ativoUsuarioInput").checked;
 
       if (!username) {
         App.toast("Informe o nome de usuário.", "warning");
         return;
       }
 
-      if (!password) {
-        App.toast("Informe a senha.", "warning");
-        return;
-      }
+      if (modo === "novo") {
+        if (!password) {
+          App.toast("Informe a senha.", "warning");
+          return;
+        }
 
-      if (password !== confirma) {
-        App.toast("As senhas informadas não coincidem.", "warning");
-        return;
-      }
+        if (password !== confirma) {
+          App.toast("As senhas informadas não coincidem.", "warning");
+          return;
+        }
 
-      const payload = {
-        username,
-        password,
-        role
-      };
+        const payload = {
+          username,
+          password,
+          role
+        };
 
-      const btn = document.getElementById("btnSalvarUsuario");
-      btn.disabled = true;
+        const btn = document.getElementById("btnSalvarUsuario");
+        btn.disabled = true;
 
-      try {
-        await Api.post("/auth/register", payload);
-        App.toast(`Usuário ${username} cadastrado com sucesso!`, "success");
+        try {
+          await Api.post("/auth/register", payload);
+          App.toast(`Usuário ${username} cadastrado com sucesso!`, "success");
 
-        document.getElementById("novoUsuarioInput").value = "";
-        document.getElementById("novaSenhaInput").value = "";
-        document.getElementById("novaSenhaConfirmaInput").value = "";
+          setTimeout(() => {
+            window.location.href = "/usuarios";
+          }, 800);
+        } catch (err) {
+          App.toast(err.message || "Erro ao cadastrar usuário. Verifique se o login já existe.", "error");
+          btn.disabled = false;
+        }
+      } else {
+        // Modo edição
+        if (password && password !== confirma) {
+          App.toast("As novas senhas informadas não coincidem.", "warning");
+          return;
+        }
 
-      } catch (err) {
-        App.toast(err.message || "Erro ao cadastrar usuário. Verifique se o nome de usuário já existe.", "error");
-      } finally {
-        btn.disabled = false;
+        const payload = {
+          username,
+          role,
+          ativo
+        };
+
+        if (password && password.trim() !== "") {
+          payload.password = password;
+        }
+
+        const btn = document.getElementById("btnSalvarUsuario");
+        btn.disabled = true;
+
+        try {
+          await Api.put(`/usuarios/${usuarioId}`, payload);
+          App.toast(`Usuário ${username} atualizado com sucesso!`, "success");
+
+          setTimeout(() => {
+            window.location.href = "/usuarios";
+          }, 800);
+        } catch (err) {
+          App.toast(err.message || "Erro ao atualizar usuário.", "error");
+          btn.disabled = false;
+        }
       }
     }
   </script>

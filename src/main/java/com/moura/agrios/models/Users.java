@@ -37,10 +37,20 @@ public class Users implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    private Boolean ativo = true;
+
     public Users(String username, String password, UserRole role){
         this.username = username;
         this.password = password;
         this.role = role;
+        this.ativo = true;
+    }
+
+    public Users(String username, String password, UserRole role, Boolean ativo){
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.ativo = ativo != null ? ativo : true;
     }
 
 
@@ -71,7 +81,7 @@ public class Users implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return Boolean.TRUE.equals(this.ativo); }
 
 
 

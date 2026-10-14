@@ -35,17 +35,21 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data){
         try{
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
+            var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
+            var auth = this.authenticationManager.authenticate(usernamePassword);
 
-        var token = tokenService.generatedToken((Users) auth.getPrincipal());
+            var token = tokenService.generatedToken((Users) auth.getPrincipal());
 
-        return ResponseEntity.ok(new LoginResponseDTO(token));
+            return ResponseEntity.ok(new LoginResponseDTO(token));
 
-            }catch(Exception e){
-            e.printStackTrace(); //mostra o erro que deu
-                    return ResponseEntity.status(401).body(e.getMessage());
-            }
+        } catch (org.springframework.security.authentication.DisabledException e) {
+            return ResponseEntity.status(401).body("Usuário inativo. Acesso não permitido.");
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            return ResponseEntity.status(401).body("Usuário ou senha incorretos.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(401).body(e.getMessage());
+        }
     }
 
     @PostMapping("/register") //comentar endpoint futuramente pois ele não deve existir
