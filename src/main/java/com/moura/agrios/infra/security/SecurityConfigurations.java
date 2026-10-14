@@ -34,6 +34,12 @@ public class SecurityConfigurations {
     // Permite o encaminhamento para o tratamento de erros.
     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 
+    // Recursos estáticos
+    .requestMatchers("/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
+
+    // Rotas de visualização (páginas HTML)
+    .requestMatchers(HttpMethod.GET, "/", "/login", "/dashboard", "/clientes/**", "/servicos/**", "/produtos/**", "/maquinas/**", "/ordens-servico/**", "/contas-receber/**", "/usuarios/**").permitAll()
+
     // Login e registro
     .requestMatchers(HttpMethod.POST,"/auth/login","/auth/register").permitAll()
 

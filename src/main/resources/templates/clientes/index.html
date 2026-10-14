@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Clientes')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Clientes')}"></header>
+
+      <main class="app-content">
+
+        <!-- Barra de Ações e Filtro -->
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              id="clienteSearchInput" 
+              class="form-control" 
+              placeholder="Pesquisar por nome, documento ou email..."
+            >
+          </div>
+
+          <a href="/clientes/novo" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            <span>Novo Cliente</span>
+          </a>
+        </div>
+
+        <!-- Tabela de Clientes -->
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Nome / Razão Social</th>
+                    <th>Tipo</th>
+                    <th>Documento</th>
+                    <th>Contato</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaClientesBody">
+                  <tr>
+                    <td colspan="6" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando clientes...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    let clientesCache = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarClientes();
+
+      // Busca simples no frontend
+      const searchInput = document.getElementById("clienteSearchInput");
+      searchInput.addEventListener("input", (e) => {
+        const termo = e.target.value.toLowerCase().trim();
+        if (!termo) {
+          renderTabela(clientesCache);
+          return;
+        }
+
+        const filtrados = clientesCache.filter(c => {
+          const nome = (c.nome || c.razaoSocial || "").toLowerCase();
+          const doc = (c.documento || "").toLowerCase();
+          const email = (c.email || "").toLowerCase();
+          return nome.includes(termo) || doc.includes(termo) || email.includes(termo);
+        });
+
+        renderTabela(filtrados);
+      });
+    });
+
+    async function carregarClientes() {
+      const tbody = document.getElementById("tabelaClientesBody");
+      try {
+        const data = await Api.get("/clientes");
+        clientesCache = Array.isArray(data) ? data : [];
+        renderTabela(clientesCache);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("tabelaClientesBody");
+
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="table-empty">
+              <i class="bi bi-person-x"></i>
+              Nenhum cliente cadastrado.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(c => {
+        const nomePrincipal = c.tipoPessoa === "JURIDICA" 
+          ? (c.razaoSocial || c.nomeFantasia || "-") 
+          : (c.nome || "-");
+
+        const subInfo = c.tipoPessoa === "JURIDICA" && c.nomeFantasia 
+          ? `<div style="font-size: 0.75rem; color: var(--text-muted);">${c.nomeFantasia}</div>` 
+          : (c.email ? `<div style="font-size: 0.75rem; color: var(--text-muted);">${c.email}</div>` : "");
+
+        const tipoBadge = c.tipoPessoa === "JURIDICA" 
+          ? '<span style="font-size: 0.75rem; font-weight: 600; color: #475569;">PJ</span>' 
+          : '<span style="font-size: 0.75rem; font-weight: 600; color: #475569;">PF</span>';
+
+        return `
+          <tr>
+            <td>
+              <a href="/clientes/${c.id}/detalhes" style="font-weight: 600; color: var(--color-primary);">
+                ${nomePrincipal}
+              </a>
+              ${subInfo}
+            </td>
+            <td>${tipoBadge}</td>
+            <td style="font-family: monospace;">${App.formatDocument(c.documento)}</td>
+            <td>${App.formatPhone(c.contato)}</td>
+            <td>${App.renderStatusBadge(c.ativo ? 'ATIVO' : 'INATIVO')}</td>
+            <td>
+              <div class="actions-cell">
+                <a href="/clientes/${c.id}/detalhes" class="btn btn-secondary btn-sm" title="Visualizar e Gerenciar Fazendas">
+                  <i class="bi bi-eye"></i>
+                  <span>Fazendas</span>
+                </a>
+                <a href="/clientes/${c.id}/editar" class="btn btn-secondary btn-sm" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                  <span>Editar</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  </script>
+</body>
+</html>

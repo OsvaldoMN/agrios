@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Detalhes da Conta a Receber')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Conta a Receber')}"></header>
+
+      <main class="app-content">
+
+        <!-- Barra de Ações Superior -->
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 960px; margin: 0 auto 16px auto; flex-wrap: wrap; gap: 12px;">
+          <a href="/contas-receber" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+            <span>Voltar para Contas a Receber</span>
+          </a>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="btnAbrirModalPagamento" type="button" class="btn btn-success btn-sm" style="display: none;">
+              <i class="bi bi-cash-coin"></i>
+              <span>Registrar Pagamento</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="max-width: 960px; margin: 0 auto;">
+
+          <!-- Card de Dados da Conta -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="bi bi-receipt"></i>
+                <span id="contaTitulo">Conta #---</span>
+              </h2>
+              <div id="contaStatusBadge">-</div>
+            </div>
+            <div class="card-body">
+              <div class="admin-doc-grid">
+                
+                <div class="admin-doc-field">
+                  <span class="admin-doc-label">Cliente</span>
+                  <span id="contaCliente" class="admin-doc-value">-</span>
+                </div>
+
+                <div class="admin-doc-field">
+                  <span class="admin-doc-label">Origem do Lançamento</span>
+                  <span id="contaOrigem" class="admin-doc-value">-</span>
+                </div>
+
+                <div class="admin-doc-field">
+                  <span class="admin-doc-label">Data de Emissão</span>
+                  <span id="contaDataEmissao" class="admin-doc-value">-</span>
+                </div>
+
+                <div class="admin-doc-field">
+                  <span class="admin-doc-label">Data de Vencimento</span>
+                  <span id="contaDataVencimento" class="admin-doc-value" style="font-weight: 700;">-</span>
+                </div>
+
+                <div class="admin-doc-field" style="grid-column: span 2;">
+                  <span class="admin-doc-label">Descrição</span>
+                  <span id="contaDescricao" class="admin-doc-value">-</span>
+                </div>
+
+              </div>
+
+              <!-- Resumo Financeiro da Conta -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                
+                <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+                  <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Valor Nominal</span>
+                  <div id="contaValorNominal" style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin-top: 4px;">R$ 0,00</div>
+                </div>
+
+                <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 14px;">
+                  <span style="font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 600;">Total Recebido</span>
+                  <div id="contaTotalRecebido" style="font-size: 1.3rem; font-weight: 700; color: var(--color-success); margin-top: 4px;">R$ 0,00</div>
+                </div>
+
+                <div style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: var(--radius-sm); padding: 14px;">
+                  <span style="font-size: 0.72rem; text-transform: uppercase; color: #854d0e; font-weight: 600;">Saldo Restante</span>
+                  <div id="contaSaldoRestante" style="font-size: 1.3rem; font-weight: 700; color: #a16207; margin-top: 4px;">R$ 0,00</div>
+                </div>
+
+              </div>
+
+              <!-- Observações -->
+              <div style="margin-top: 20px;" id="boxObservacoesConta">
+                <span class="admin-doc-label">Observações</span>
+                <div id="contaObservacoes" style="font-size: 0.88rem; color: var(--text-main); margin-top: 4px; padding: 10px; background-color: #fafbfc; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                  Nenhuma observação informada.
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Card de Histórico de Recebimentos / Pagamentos -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="bi bi-clock-history"></i>
+                Histórico de Recebimentos Registrados
+              </h2>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="table-custom">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Data do Pagamento</th>
+                      <th>Forma de Pagamento</th>
+                      <th>Valor Pago</th>
+                      <th>Observações</th>
+                      <th>Registrado em</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabelaRecebimentosBody">
+                    <tr>
+                      <td colspan="6" class="table-empty">
+                        <i class="bi bi-hourglass-split"></i>
+                        Carregando histórico de recebimentos...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal para Registrar Pagamento -->
+  <div id="modalRegistrarPagamento" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Pagamento</h3>
+        <button id="btnFecharModalPagamento" class="btn-close-modal">&times;</button>
+      </div>
+      <form id="formRegistrarPagamento">
+        <div class="modal-body">
+          <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Saldo pendente desta conta:</div>
+            <div id="modalSaldoPendente" style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">R$ 0,00</div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="pagamentoValorInput" class="form-label required">Valor a Receber (R$)</label>
+            <input type="number" id="pagamentoValorInput" class="form-control" step="0.01" min="0.01" required>
+            <span class="form-hint">O pagamento não pode exceder o saldo restante.</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="pagamentoFormaSelect" class="form-label required">Forma de Pagamento</label>
+            <select id="pagamentoFormaSelect" class="form-select" required>
+              <option value="PIX">PIX</option>
+              <option value="DINHEIRO">Dinheiro</option>
+              <option value="TRANSFERENCIA">Transferência Bancária</option>
+              <option value="BOLETO">Boleto Bancário</option>
+              <option value="CARTAO_DEBITO">Cartão de Débito</option>
+              <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+              <option value="OUTRO">Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="pagamentoDataInput" class="form-label required">Data do Pagamento</label>
+            <input type="date" id="pagamentoDataInput" class="form-control" required>
+            <span class="form-hint">A data não pode ser futura.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="pagamentoObservacoesInput" class="form-label">Observações do Recebimento</label>
+            <textarea id="pagamentoObservacoesInput" class="form-textarea" placeholder="Comprovante, banco ou notas do recebimento..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelarModalPagamento" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btnConfirmarPagamento" class="btn btn-success">
+            <i class="bi bi-check-circle"></i>
+            <span>Confirmar Recebimento</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const contaId = /*[[${contaId}]]*/ null;
+    let contaAtual = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (contaId) {
+        await carregarDetalhesConta();
+        configurarModalPagamento();
+      }
+    });
+
+    async function carregarDetalhesConta() {
+      try {
+        const conta = await Api.get(`/contas-receber/${contaId}`);
+        if (!conta) return;
+        contaAtual = conta;
+
+        // Cabeçalho
+        document.getElementById("contaTitulo").textContent = `Conta #${conta.id} - ${conta.descricao}`;
+        document.getElementById("contaStatusBadge").innerHTML = App.renderStatusBadge(conta.status);
+
+        // Dados
+        document.getElementById("contaCliente").textContent = conta.clienteNome || "-";
+        
+        let origemHtml = "Lançamento Manual";
+        if (conta.origem === "ORDEM_SERVICO") {
+          origemHtml = `<a href="/ordens-servico/${conta.ordemServicoId}/detalhes" style="font-weight: 600;">Ordem de Serviço #${conta.ordemServicoId}</a>`;
+        }
+        document.getElementById("contaOrigem").innerHTML = origemHtml;
+
+        document.getElementById("contaDataEmissao").textContent = App.formatDate(conta.dataEmissao);
+        document.getElementById("contaDataVencimento").textContent = App.formatDate(conta.dataVencimento);
+        document.getElementById("contaDescricao").textContent = conta.descricao || "-";
+
+        document.getElementById("contaValorNominal").textContent = App.formatCurrency(conta.valor);
+        document.getElementById("contaTotalRecebido").textContent = App.formatCurrency(conta.valorRecebido);
+        document.getElementById("contaSaldoRestante").textContent = App.formatCurrency(conta.saldo);
+
+        document.getElementById("contaObservacoes").textContent = conta.observacoes || "Nenhuma observação informada.";
+
+        // Histórico de Recebimentos
+        const tbody = document.getElementById("tabelaRecebimentosBody");
+        if (conta.recebimentos && conta.recebimentos.length > 0) {
+          tbody.innerHTML = conta.recebimentos.map(r => `
+            <tr>
+              <td style="font-weight: 600;">#${r.id}</td>
+              <td style="font-weight: 500;">${App.formatDate(r.dataPagamento)}</td>
+              <td><span style="font-size: 0.8rem; font-weight: 600; color: #475569;">${r.formaPagamento}</span></td>
+              <td style="font-weight: 700; color: var(--color-success);">${App.formatCurrency(r.valor)}</td>
+              <td>${r.observacoes || "-"}</td>
+              <td style="font-size: 0.78rem; color: var(--text-muted);">${App.formatDateTime(r.criadoEm)}</td>
+            </tr>
+          `).join("");
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="table-empty">
+                <i class="bi bi-cash-stack"></i>
+                Nenhum pagamento registrado ainda para esta conta.
+              </td>
+            </tr>`;
+        }
+
+        // Habilita botão de registrar pagamento apenas se tiver saldo e não for cancelada
+        const btnPagamento = document.getElementById("btnAbrirModalPagamento");
+        if (conta.status !== "QUITADA" && conta.status !== "CANCELADA" && Number(conta.saldo) > 0) {
+          btnPagamento.style.display = "inline-flex";
+          btnPagamento.onclick = () => abrirModalPagamento();
+        } else {
+          btnPagamento.style.display = "none";
+        }
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    function abrirModalPagamento() {
+      if (!contaAtual) return;
+
+      const modal = document.getElementById("modalRegistrarPagamento");
+      document.getElementById("modalSaldoPendente").textContent = App.formatCurrency(contaAtual.saldo);
+      
+      const inputValor = document.getElementById("pagamentoValorInput");
+      inputValor.value = contaAtual.saldo;
+      inputValor.max = contaAtual.saldo;
+
+      document.getElementById("pagamentoDataInput").value = new Date().toISOString().split("T")[0];
+      document.getElementById("pagamentoObservacoesInput").value = "";
+
+      modal.classList.add("active");
+    }
+
+    function configurarModalPagamento() {
+      const modal = document.getElementById("modalRegistrarPagamento");
+      const fechar = () => modal.classList.remove("active");
+
+      document.getElementById("btnFecharModalPagamento").onclick = fechar;
+      document.getElementById("btnCancelarModalPagamento").onclick = fechar;
+
+      document.getElementById("formRegistrarPagamento").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const valor = parseFloat(document.getElementById("pagamentoValorInput").value);
+        const formaPagamento = document.getElementById("pagamentoFormaSelect").value;
+        const dataPagamento = document.getElementById("pagamentoDataInput").value;
+        const observacoes = document.getElementById("pagamentoObservacoesInput").value.trim();
+
+        if (!valor || valor <= 0) {
+          App.toast("Informe um valor maior que zero.", "warning");
+          return;
+        }
+
+        if (valor > Number(contaAtual.saldo)) {
+          App.toast(`O valor do pagamento não pode ser superior ao saldo de ${App.formatCurrency(contaAtual.saldo)}.`, "warning");
+          return;
+        }
+
+        const hojeStr = new Date().toISOString().split("T")[0];
+        if (dataPagamento > hojeStr) {
+          App.toast("A data de pagamento não pode ser futura.", "warning");
+          return;
+        }
+
+        const payload = {
+          valor,
+          formaPagamento,
+          dataPagamento: dataPagamento || null,
+          observacoes: observacoes || null
+        };
+
+        const btn = document.getElementById("btnConfirmarPagamento");
+        btn.disabled = true;
+
+        try {
+          await Api.post(`/contas-receber/${contaId}/pagamentos`, payload);
+          fechar();
+          App.toast("Pagamento registrado com sucesso!", "success");
+          await carregarDetalhesConta();
+        } catch (err) {
+          App.toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

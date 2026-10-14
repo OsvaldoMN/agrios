@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="html_head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${title != null ? title + ' - AgriOS' : 'AgriOS - Gestão de Ordens de Serviço'}">AgriOS</title>
+  
+  <!-- Ícones Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- CSS Principal AgriOS -->
+  <link rel="stylesheet" th:href="@{/css/main.css}" href="/css/main.css">
+</head>
+
+<body>
+  <div class="app-container">
+    
+    <!-- Backdrop da Sidebar no Mobile -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <!-- Barra Lateral (Sidebar) -->
+    <aside id="appSidebar" class="app-sidebar" th:fragment="sidebar">
+      <div class="sidebar-header">
+        <div>
+          <div class="sidebar-brand">
+            AGRI<span>OS</span>
+          </div>
+          <div class="sidebar-subtitle">Gestão Agrícola</div>
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="/dashboard" class="nav-link">
+              <i class="bi bi-grid-1x2"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Categoria: Ordens de Serviço -->
+        <div class="nav-category">
+          <div class="nav-category-title">Ordens de Serviço</div>
+        </div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="/ordens-servico" class="nav-link">
+              <i class="bi bi-file-earmark-text"></i>
+              <span>Ordens de Serviço</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Categoria: Financeiro -->
+        <div class="nav-category">
+          <div class="nav-category-title">Financeiro</div>
+        </div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="/contas-receber" class="nav-link">
+              <i class="bi bi-cash-stack"></i>
+              <span>Contas a Receber</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Categoria: Cadastros -->
+        <div class="nav-category">
+          <div class="nav-category-title">Cadastros</div>
+        </div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="/clientes" class="nav-link">
+              <i class="bi bi-people"></i>
+              <span>Clientes</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/servicos" class="nav-link">
+              <i class="bi bi-tools"></i>
+              <span>Serviços</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/produtos" class="nav-link">
+              <i class="bi bi-box-seam"></i>
+              <span>Produtos</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/maquinas" class="nav-link">
+              <i class="bi bi-truck"></i>
+              <span>Máquinas</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/usuarios/novo" class="nav-link">
+              <i class="bi bi-person-plus"></i>
+              <span>Novo Usuário</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>AgriOS &copy; 2026</span>
+        <span style="font-size: 0.7rem; color: #4b6350;">v1.0</span>
+      </div>
+    </aside>
+
+    <!-- Área Principal -->
+    <div class="app-main">
+      
+      <!-- Cabeçalho (Header) -->
+      <header class="app-header" th:fragment="header(pageTitle)">
+        <div class="header-left">
+          <button id="sidebarToggleBtn" class="btn-sidebar-toggle" aria-label="Abrir Menu">
+            <i class="bi bi-list"></i>
+          </button>
+          <h1 class="header-title" th:text="${pageTitle}">AgriOS</h1>
+        </div>
+
+        <div class="header-right">
+          <div class="user-profile">
+            <div id="headerUserAvatar" class="user-avatar">A</div>
+            <div class="user-info">
+              <span id="headerUserName" class="user-name">Usuário</span>
+              <span id="headerUserRole" class="user-role-badge">ADMIN</span>
+            </div>
+          </div>
+
+          <button id="headerLogoutBtn" class="btn-logout" title="Encerrar sessão">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sair</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Conteúdo da Página -->
+      <main class="app-content">
+        <!-- Inserido dinamicamente pelas páginas -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Modal Global de Confirmação -->
+  <div id="globalConfirmModal" class="modal-backdrop" th:fragment="modal_confirm">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="globalConfirmTitle" class="modal-title">Confirmação</h3>
+        <button id="globalCloseBtn" class="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="globalConfirmMessage" style="color: var(--text-muted); font-size: 0.95rem;">Deseja confirmar esta operação?</p>
+      </div>
+      <div class="modal-footer">
+        <button id="globalCancelBtn" type="button" class="btn btn-secondary">Cancelar</button>
+        <button id="globalConfirmBtn" type="button" class="btn btn-primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container de Toasts -->
+  <div id="toastContainer" class="toast-container" th:fragment="toasts"></div>
+
+  <!-- Scripts Compartilhados -->
+  <div th:fragment="scripts">
+    <script th:src="@{/js/api.js}" src="/js/api.js"></script>
+    <script th:src="@{/js/app.js}" src="/js/app.js"></script>
+    <script>
+      // Validação de autenticação imediata
+      Api.requireAuth();
+    </script>
+  </div>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Produtos')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Produtos')}"></header>
+
+      <main class="app-content">
+
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              id="produtoSearchInput" 
+              class="form-control" 
+              placeholder="Pesquisar por nome ou descrição..."
+            >
+          </div>
+
+          <a href="/produtos/novo" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            <span>Novo Produto</span>
+          </a>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Nome do Produto</th>
+                    <th>Descrição</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaProdutosBody">
+                  <tr>
+                    <td colspan="4" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando produtos...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    let produtosCache = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarProdutos();
+
+      const searchInput = document.getElementById("produtoSearchInput");
+      searchInput.addEventListener("input", (e) => {
+        const termo = e.target.value.toLowerCase().trim();
+        if (!termo) {
+          renderTabela(produtosCache);
+          return;
+        }
+
+        const filtrados = produtosCache.filter(p => {
+          const nome = (p.nome || "").toLowerCase();
+          const desc = (p.descricao || "").toLowerCase();
+          return nome.includes(termo) || desc.includes(termo);
+        });
+
+        renderTabela(filtrados);
+      });
+    });
+
+    async function carregarProdutos() {
+      const tbody = document.getElementById("tabelaProdutosBody");
+      try {
+        const data = await Api.get("/produtos");
+        produtosCache = Array.isArray(data) ? data : [];
+        renderTabela(produtosCache);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("tabelaProdutosBody");
+
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="table-empty">
+              <i class="bi bi-box-seam"></i>
+              Nenhum produto cadastrado.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(p => `
+        <tr>
+          <td style="font-weight: 600;">${p.nome}</td>
+          <td>${p.descricao || "-"}</td>
+          <td>${App.renderStatusBadge(p.ativo ? 'ATIVO' : 'INATIVO')}</td>
+          <td>
+            <div class="actions-cell">
+              <a href="/produtos/${p.id}/editar" class="btn btn-secondary btn-sm">
+                <i class="bi bi-pencil"></i>
+                <span>Editar</span>
+              </a>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Máquinas')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Máquinas')}"></header>
+
+      <main class="app-content">
+
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              id="maquinaSearchInput" 
+              class="form-control" 
+              placeholder="Pesquisar por nome, identificação ou placa..."
+            >
+          </div>
+
+          <a href="/maquinas/novo" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            <span>Nova Máquina</span>
+          </a>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Identificação</th>
+                    <th>Nome da Máquina</th>
+                    <th>Marca / Modelo</th>
+                    <th>Ano</th>
+                    <th>Placa</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaMaquinasBody">
+                  <tr>
+                    <td colspan="7" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando máquinas...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    let maquinasCache = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarMaquinas();
+
+      const searchInput = document.getElementById("maquinaSearchInput");
+      searchInput.addEventListener("input", (e) => {
+        const termo = e.target.value.toLowerCase().trim();
+        if (!termo) {
+          renderTabela(maquinasCache);
+          return;
+        }
+
+        const filtrados = maquinasCache.filter(m => {
+          const nome = (m.nome || "").toLowerCase();
+          const id = (m.identificacao || "").toLowerCase();
+          const placa = (m.placa || "").toLowerCase();
+          const marca = (m.marca || "").toLowerCase();
+          const modelo = (m.modelo || "").toLowerCase();
+          return nome.includes(termo) || id.includes(termo) || placa.includes(termo) || marca.includes(termo) || modelo.includes(termo);
+        });
+
+        renderTabela(filtrados);
+      });
+    });
+
+    async function carregarMaquinas() {
+      const tbody = document.getElementById("tabelaMaquinasBody");
+      try {
+        const data = await Api.get("/maquinas");
+        maquinasCache = Array.isArray(data) ? data : [];
+        renderTabela(maquinasCache);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("tabelaMaquinasBody");
+
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="table-empty">
+              <i class="bi bi-truck"></i>
+              Nenhuma máquina cadastrada.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(m => {
+        const marcaModelo = (m.marca && m.modelo) ? `${m.marca} ${m.modelo}` : (m.marca || m.modelo || "-");
+
+        return `
+          <tr>
+            <td style="font-family: monospace; font-weight: 600; color: var(--color-primary);">
+              ${m.identificacao || "-"}
+            </td>
+            <td style="font-weight: 500;">${m.nome}</td>
+            <td>${marcaModelo}</td>
+            <td>${m.anoFabricacao || "-"}</td>
+            <td style="font-family: monospace;">${m.placa || "-"}</td>
+            <td>${App.renderStatusBadge(m.ativo ? 'ATIVO' : 'INATIVO')}</td>
+            <td>
+              <div class="actions-cell">
+                <a href="/maquinas/${m.id}/editar" class="btn btn-secondary btn-sm">
+                  <i class="bi bi-pencil"></i>
+                  <span>Editar</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Produto' : 'Novo Produto'})}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header(${modo == 'editar' ? 'Editar Produto' : 'Novo Produto'})}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 700px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-box-seam"></i>
+              <span th:text="${modo == 'editar' ? 'Dados do Produto' : 'Cadastro de Novo Produto'}">Formulário de Produto</span>
+            </h2>
+            <a href="/produtos" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="produtoForm">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <div class="col-12 form-group">
+                  <label for="nomeProdutoInput" class="form-label required">Nome do Produto</label>
+                  <input type="text" id="nomeProdutoInput" class="form-control" maxlength="150" placeholder="Ex: Herbicida Glifosato, Fertilizante NPK, Adjuvante" required>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="descricaoProdutoInput" class="form-label">Descrição do Produto</label>
+                  <textarea id="descricaoProdutoInput" class="form-textarea" placeholder="Especificações técnicas, dosagem usual ou observações..."></textarea>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label class="form-check">
+                    <input type="checkbox" id="ativoProdutoInput" checked>
+                    <span style="font-weight: 500;">Produto Ativo</span>
+                  </label>
+                  <span class="form-hint">Produtos inativos não aparecem na criação de novas Ordens de Serviço.</span>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a href="/produtos" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarProduto" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações' : 'Cadastrar Produto'}">Salvar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const produtoId = /*[[${produtoId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (modo === "editar" && produtoId) {
+        await carregarDadosProduto();
+      }
+
+      document.getElementById("produtoForm").addEventListener("submit", salvarProduto);
+    });
+
+    async function carregarDadosProduto() {
+      try {
+        const p = await Api.get(`/produtos/${produtoId}`);
+        if (!p) return;
+
+        document.getElementById("nomeProdutoInput").value = p.nome || "";
+        document.getElementById("descricaoProdutoInput").value = p.descricao || "";
+        document.getElementById("ativoProdutoInput").checked = p.ativo !== false;
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarProduto(e) {
+      e.preventDefault();
+
+      const nome = document.getElementById("nomeProdutoInput").value.trim();
+      const descricao = document.getElementById("descricaoProdutoInput").value.trim();
+      const ativo = document.getElementById("ativoProdutoInput").checked;
+
+      if (!nome) {
+        App.toast("Nome do produto é obrigatório.", "warning");
+        return;
+      }
+
+      const payload = {
+        nome,
+        descricao: descricao || null,
+        ativo
+      };
+
+      const btn = document.getElementById("btnSalvarProduto");
+      btn.disabled = true;
+
+      try {
+        if (modo === "editar") {
+          await Api.put(`/produtos/${produtoId}`, payload);
+          App.toast("Produto atualizado com sucesso!", "success");
+        } else {
+          await Api.post("/produtos", payload);
+          App.toast("Produto cadastrado com sucesso!", "success");
+        }
+
+        setTimeout(() => {
+          window.location.href = "/produtos";
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

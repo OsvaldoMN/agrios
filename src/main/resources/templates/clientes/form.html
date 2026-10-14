@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head(${modo == 'editar' ? 'Editar Cliente' : 'Novo Cliente'})}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header(${modo == 'editar' ? 'Editar Cliente' : 'Novo Cliente'})}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 900px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-person-badge"></i>
+              <span th:text="${modo == 'editar' ? 'Dados do Cliente' : 'Cadastro de Novo Cliente'}">Formulário de Cliente</span>
+            </h2>
+            <a href="/clientes" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="clienteForm">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <!-- Tipo de Pessoa -->
+                <div class="col-12 form-group">
+                  <label class="form-label required">Tipo de Pessoa</label>
+                  <div style="display: flex; gap: 20px; align-items: center; margin-top: 4px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                      <input type="radio" name="tipoPessoa" value="FISICA" checked>
+                      <span>Pessoa Física (CPF)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                      <input type="radio" name="tipoPessoa" value="JURIDICA">
+                      <span>Pessoa Jurídica (CNPJ)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Campos Pessoa Física -->
+                <div id="camposPessoaFisica" class="col-12 form-grid" style="padding: 0; margin: 0;">
+                  <div class="col-8 form-group">
+                    <label for="nomeInput" class="form-label required">Nome Completo</label>
+                    <input type="text" id="nomeInput" class="form-control" placeholder="Ex: José da Silva">
+                  </div>
+                  <div class="col-4 form-group">
+                    <label for="dataNascimentoInput" class="form-label">Data de Nascimento</label>
+                    <input type="date" id="dataNascimentoInput" class="form-control">
+                  </div>
+                </div>
+
+                <!-- Campos Pessoa Jurídica -->
+                <div id="camposPessoaJuridica" class="col-12 form-grid" style="display: none; padding: 0; margin: 0;">
+                  <div class="col-6 form-group">
+                    <label for="razaoSocialInput" class="form-label required">Razão Social</label>
+                    <input type="text" id="razaoSocialInput" class="form-control" placeholder="Ex: Agropecuária Santa Maria LTDA">
+                  </div>
+                  <div class="col-6 form-group">
+                    <label for="nomeFantasiaInput" class="form-label required">Nome Fantasia</label>
+                    <input type="text" id="nomeFantasiaInput" class="form-control" placeholder="Ex: Fazenda Santa Maria">
+                  </div>
+                </div>
+
+                <!-- Documento CPF / CNPJ -->
+                <div class="col-6 form-group">
+                  <label for="documentoInput" id="documentoLabel" class="form-label required">CPF (11 dígitos)</label>
+                  <input type="text" id="documentoInput" class="form-control" placeholder="Apenas números ou formatado" required>
+                  <span class="form-hint" id="documentoHint">Informe 11 dígitos do CPF</span>
+                </div>
+
+                <!-- Contato / Telefone -->
+                <div class="col-6 form-group">
+                  <label for="contatoInput" class="form-label">Telefone / WhatsApp</label>
+                  <input type="text" id="contatoInput" class="form-control" placeholder="(00) 00000-0000">
+                  <span class="form-hint">10 ou 11 dígitos com DDD</span>
+                </div>
+
+                <!-- E-mail -->
+                <div class="col-8 form-group">
+                  <label for="emailInput" class="form-label">E-mail</label>
+                  <input type="email" id="emailInput" class="form-control" placeholder="exemplo@dominio.com.br">
+                </div>
+
+                <!-- Status Ativo -->
+                <div class="col-4 form-group" style="justify-content: flex-end;">
+                  <label class="form-check">
+                    <input type="checkbox" id="ativoInput" checked>
+                    <span style="font-weight: 500;">Cadastro Ativo</span>
+                  </label>
+                </div>
+
+                <!-- Observações -->
+                <div class="col-12 form-group">
+                  <label for="observacoesInput" class="form-label">Observações Gerais</label>
+                  <textarea id="observacoesInput" class="form-textarea" placeholder="Informações adicionais sobre o cliente..."></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a href="/clientes" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarCliente" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span th:text="${modo == 'editar' ? 'Salvar Alterações' : 'Cadastrar Cliente'}">Salvar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const modo = /*[[${modo}]]*/ 'novo';
+    const clienteId = /*[[${clienteId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      configurarAlternanciaTipoPessoa();
+
+      if (modo === "editar" && clienteId) {
+        await carregarDadosCliente(clienteId);
+      }
+
+      document.getElementById("clienteForm").addEventListener("submit", salvarCliente);
+    });
+
+    function configurarAlternanciaTipoPessoa() {
+      const radios = document.querySelectorAll('input[name="tipoPessoa"]');
+      const pfSec = document.getElementById("camposPessoaFisica");
+      const pjSec = document.getElementById("camposPessoaJuridica");
+      const docLabel = document.getElementById("documentoLabel");
+      const docHint = document.getElementById("documentoHint");
+
+      radios.forEach(r => {
+        r.addEventListener("change", () => {
+          if (r.value === "FISICA") {
+            pfSec.style.display = "grid";
+            pjSec.style.display = "none";
+            docLabel.textContent = "CPF (11 dígitos)";
+            docHint.textContent = "Informe 11 dígitos do CPF";
+          } else {
+            pfSec.style.display = "none";
+            pjSec.style.display = "grid";
+            docLabel.textContent = "CNPJ (14 dígitos)";
+            docHint.textContent = "Informe 14 dígitos do CNPJ";
+          }
+        });
+      });
+    }
+
+    async function carregarDadosCliente(id) {
+      try {
+        const cliente = await Api.get(`/clientes/${id}`);
+        if (!cliente) return;
+
+        // Tipo de pessoa
+        const radio = document.querySelector(`input[name="tipoPessoa"][value="${cliente.tipoPessoa}"]`);
+        if (radio) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event("change"));
+        }
+
+        if (cliente.tipoPessoa === "FISICA") {
+          document.getElementById("nomeInput").value = cliente.nome || "";
+          document.getElementById("dataNascimentoInput").value = cliente.dataNascimento || "";
+        } else {
+          document.getElementById("razaoSocialInput").value = cliente.razaoSocial || "";
+          document.getElementById("nomeFantasiaInput").value = cliente.nomeFantasia || "";
+        }
+
+        document.getElementById("documentoInput").value = cliente.documento || "";
+        document.getElementById("contatoInput").value = cliente.contato || "";
+        document.getElementById("emailInput").value = cliente.email || "";
+        document.getElementById("ativoInput").checked = cliente.ativo !== false;
+        document.getElementById("observacoesInput").value = cliente.observacoes || "";
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarCliente(e) {
+      e.preventDefault();
+
+      const tipoPessoa = document.querySelector('input[name="tipoPessoa"]:checked').value;
+      const documento = document.getElementById("documentoInput").value.trim();
+      const contato = document.getElementById("contatoInput").value.trim();
+      const email = document.getElementById("emailInput").value.trim();
+      const ativo = document.getElementById("ativoInput").checked;
+      const observacoes = document.getElementById("observacoesInput").value.trim();
+
+      const payload = {
+        tipoPessoa,
+        documento,
+        contato: contato || null,
+        email: email || null,
+        ativo,
+        observacoes: observacoes || null
+      };
+
+      if (tipoPessoa === "FISICA") {
+        const nome = document.getElementById("nomeInput").value.trim();
+        const dataNascimento = document.getElementById("dataNascimentoInput").value;
+        if (!nome) {
+          App.toast("Nome é obrigatório para pessoa física.", "warning");
+          return;
+        }
+        payload.nome = nome;
+        payload.dataNascimento = dataNascimento || null;
+      } else {
+        const razaoSocial = document.getElementById("razaoSocialInput").value.trim();
+        const nomeFantasia = document.getElementById("nomeFantasiaInput").value.trim();
+        if (!razaoSocial || !nomeFantasia) {
+          App.toast("Razão Social e Nome Fantasia são obrigatórios para pessoa jurídica.", "warning");
+          return;
+        }
+        payload.razaoSocial = razaoSocial;
+        payload.nomeFantasia = nomeFantasia;
+      }
+
+      const btn = document.getElementById("btnSalvarCliente");
+      btn.disabled = true;
+
+      try {
+        if (modo === "editar") {
+          await Api.put(`/clientes/${clienteId}`, payload);
+          App.toast("Cliente atualizado com sucesso!", "success");
+        } else {
+          await Api.post("/clientes", payload);
+          App.toast("Cliente cadastrado com sucesso!", "success");
+        }
+
+        setTimeout(() => {
+          window.location.href = "/clientes";
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

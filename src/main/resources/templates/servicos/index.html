@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Serviços')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Serviços')}"></header>
+
+      <main class="app-content">
+
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <input 
+              type="text" 
+              id="servicoSearchInput" 
+              class="form-control" 
+              placeholder="Pesquisar por nome ou descrição..."
+            >
+          </div>
+
+          <a href="/servicos/novo" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            <span>Novo Serviço</span>
+          </a>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Nome do Serviço</th>
+                    <th>Descrição</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaServicosBody">
+                  <tr>
+                    <td colspan="4" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando serviços...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    let servicosCache = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarServicos();
+
+      const searchInput = document.getElementById("servicoSearchInput");
+      searchInput.addEventListener("input", (e) => {
+        const termo = e.target.value.toLowerCase().trim();
+        if (!termo) {
+          renderTabela(servicosCache);
+          return;
+        }
+
+        const filtrados = servicosCache.filter(s => {
+          const nome = (s.nome || "").toLowerCase();
+          const desc = (s.descricao || "").toLowerCase();
+          return nome.includes(termo) || desc.includes(termo);
+        });
+
+        renderTabela(filtrados);
+      });
+    });
+
+    async function carregarServicos() {
+      const tbody = document.getElementById("tabelaServicosBody");
+      try {
+        const data = await Api.get("/servicos");
+        servicosCache = Array.isArray(data) ? data : [];
+        renderTabela(servicosCache);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("tabelaServicosBody");
+
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="table-empty">
+              <i class="bi bi-tools"></i>
+              Nenhum serviço cadastrado.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(s => `
+        <tr>
+          <td style="font-weight: 600;">${s.nome}</td>
+          <td>${s.descricao || "-"}</td>
+          <td>${App.renderStatusBadge(s.ativo ? 'ATIVO' : 'INATIVO')}</td>
+          <td>
+            <div class="actions-cell">
+              <a href="/servicos/${s.id}/editar" class="btn btn-secondary btn-sm">
+                <i class="bi bi-pencil"></i>
+                <span>Editar</span>
+              </a>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+  </script>
+</body>
+</html>

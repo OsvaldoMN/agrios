@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Nova Conta a Receber')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Nova Conta a Receber Manual')}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 750px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-cash-stack"></i>
+              Lançamento de Conta Manual
+            </h2>
+            <a href="/contas-receber" class="btn btn-secondary btn-sm">
+              <i class="bi bi-arrow-left"></i>
+              <span>Voltar</span>
+            </a>
+          </div>
+
+          <form id="contaManualForm">
+            <div class="card-body">
+              <div class="form-grid">
+
+                <div class="col-12 form-group">
+                  <label for="contaClienteSelect" class="form-label required">Cliente</label>
+                  <select id="contaClienteSelect" class="form-select" required>
+                    <option value="">Selecione o cliente pagador...</option>
+                  </select>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="contaDescricaoInput" class="form-label required">Descrição do Título / Cobrança</label>
+                  <input type="text" id="contaDescricaoInput" class="form-control" placeholder="Ex: Adiantamento de serviços, Aluguel de maquinário, etc." required>
+                </div>
+
+                <div class="col-6 form-group">
+                  <label for="contaValorInput" class="form-label required">Valor Nominal (R$)</label>
+                  <input type="number" id="contaValorInput" class="form-control" step="0.01" min="0.01" placeholder="Ex: 5000.00" required>
+                </div>
+
+                <div class="col-6 form-group">
+                  <label for="contaVencimentoInput" class="form-label required">Data de Vencimento</label>
+                  <input type="date" id="contaVencimentoInput" class="form-control" required>
+                </div>
+
+                <div class="col-12 form-group">
+                  <label for="contaObservacoesInput" class="form-label">Observações</label>
+                  <textarea id="contaObservacoesInput" class="form-textarea" placeholder="Informações bancárias, condições comerciais ou notas gerais..."></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <a href="/contas-receber" class="btn btn-secondary">Cancelar</a>
+              <button type="submit" id="btnSalvarConta" class="btn btn-primary">
+                <i class="bi bi-check2"></i>
+                <span>Cadastrar Conta a Receber</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await carregarClientes();
+
+      // Data de vencimento padrão: 15 dias à frente
+      const venc = new Date();
+      venc.setDate(venc.getDate() + 15);
+      document.getElementById("contaVencimentoInput").value = venc.toISOString().split("T")[0];
+
+      document.getElementById("contaManualForm").addEventListener("submit", salvarContaManual);
+    });
+
+    async function carregarClientes() {
+      try {
+        const clientes = await Api.get("/clientes");
+        const select = document.getElementById("contaClienteSelect");
+
+        (clientes || []).filter(c => c.ativo !== false).forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = c.tipoPessoa === "JURIDICA"
+            ? `${c.razaoSocial} (${c.nomeFantasia || c.documento})`
+            : `${c.nome} (${App.formatDocument(c.documento)})`;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function salvarContaManual(e) {
+      e.preventDefault();
+
+      const clienteId = parseInt(document.getElementById("contaClienteSelect").value, 10);
+      const descricao = document.getElementById("contaDescricaoInput").value.trim();
+      const valor = parseFloat(document.getElementById("contaValorInput").value);
+      const dataVencimento = document.getElementById("contaVencimentoInput").value;
+      const observacoes = document.getElementById("contaObservacoesInput").value.trim();
+
+      if (!clienteId) {
+        App.toast("Selecione o cliente.", "warning");
+        return;
+      }
+
+      if (!descricao) {
+        App.toast("Descrição é obrigatória.", "warning");
+        return;
+      }
+
+      if (!valor || valor <= 0) {
+        App.toast("Informe um valor maior que zero.", "warning");
+        return;
+      }
+
+      if (!dataVencimento) {
+        App.toast("Data de vencimento é obrigatória.", "warning");
+        return;
+      }
+
+      const payload = {
+        clienteId,
+        descricao,
+        valor,
+        dataVencimento,
+        observacoes: observacoes || null
+      };
+
+      const btn = document.getElementById("btnSalvarConta");
+      btn.disabled = true;
+
+      try {
+        const res = await Api.post("/contas-receber", payload);
+        App.toast("Conta a receber criada com sucesso!", "success");
+
+        const idDestino = res && res.id ? res.id : "";
+        setTimeout(() => {
+          window.location.href = `/contas-receber/${idDestino}/detalhes`;
+        }, 800);
+
+      } catch (err) {
+        btn.disabled = false;
+        App.toast(err.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

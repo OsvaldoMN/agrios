@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Detalhes do Cliente')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Detalhes do Cliente')}"></header>
+
+      <main class="app-content">
+
+        <!-- Card de Informações Gerais do Cliente -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-person-lines-fill"></i>
+              <span id="detalheClienteTitulo">Cliente</span>
+            </h2>
+            <div style="display: flex; gap: 8px;">
+              <a href="/clientes" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i>
+                <span>Voltar</span>
+              </a>
+              <a id="btnEditarClienteTopo" href="#" class="btn btn-primary btn-sm">
+                <i class="bi bi-pencil"></i>
+                <span>Editar Cliente</span>
+              </a>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="admin-doc-grid">
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Tipo de Pessoa</span>
+                <span id="detalheTipoPessoa" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Documento</span>
+                <span id="detalheDocumento" class="admin-doc-value" style="font-family: monospace;">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Contato</span>
+                <span id="detalheContato" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">E-mail</span>
+                <span id="detalheEmail" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Status</span>
+                <span id="detalheStatus" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field">
+                <span class="admin-doc-label">Cadastrado em</span>
+                <span id="detalheCriadoEm" class="admin-doc-value">-</span>
+              </div>
+              <div class="admin-doc-field" style="grid-column: span 2;">
+                <span class="admin-doc-label">Observações</span>
+                <span id="detalheObservacoes" class="admin-doc-value">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção: Fazendas Vinculadas a este Cliente -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="bi bi-geo-alt"></i>
+              Fazendas Cadastradas
+            </h2>
+            <a id="btnNovaFazenda" href="#" class="btn btn-primary btn-sm">
+              <i class="bi bi-plus-lg"></i>
+              <span>Nova Fazenda</span>
+            </a>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="table-custom">
+                <thead>
+                  <tr>
+                    <th>Nome da Fazenda</th>
+                    <th>Indicador IE</th>
+                    <th>Inscrição Estadual</th>
+                    <th>Localização (Cidade / UF)</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaFazendasBody">
+                  <tr>
+                    <td colspan="6" class="table-empty">
+                      <i class="bi bi-hourglass-split"></i>
+                      Carregando fazendas...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script th:inline="javascript">
+    const clienteId = /*[[${clienteId}]]*/ null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (clienteId) {
+        document.getElementById("btnEditarClienteTopo").href = `/clientes/${clienteId}/editar`;
+        document.getElementById("btnNovaFazenda").href = `/clientes/${clienteId}/fazendas/novo`;
+        await carregarDetalhesCliente();
+        await carregarFazendas();
+      }
+    });
+
+    async function carregarDetalhesCliente() {
+      try {
+        const c = await Api.get(`/clientes/${clienteId}`);
+        if (!c) return;
+
+        const nomePrincipal = c.tipoPessoa === "JURIDICA" 
+          ? `${c.razaoSocial} (${c.nomeFantasia})` 
+          : c.nome;
+
+        document.getElementById("detalheClienteTitulo").textContent = nomePrincipal;
+        document.getElementById("detalheTipoPessoa").textContent = c.tipoPessoa === "JURIDICA" ? "Pessoa Jurídica" : "Pessoa Física";
+        document.getElementById("detalheDocumento").textContent = App.formatDocument(c.documento);
+        document.getElementById("detalheContato").textContent = App.formatPhone(c.contato);
+        document.getElementById("detalheEmail").textContent = c.email || "-";
+        document.getElementById("detalheStatus").innerHTML = App.renderStatusBadge(c.ativo ? 'ATIVO' : 'INATIVO');
+        document.getElementById("detalheCriadoEm").textContent = App.formatDateTime(c.criadoEm);
+        document.getElementById("detalheObservacoes").textContent = c.observacoes || "Nenhuma observação registrada.";
+
+      } catch (err) {
+        App.toast(err.message, "error");
+      }
+    }
+
+    async function carregarFazendas() {
+      const tbody = document.getElementById("tabelaFazendasBody");
+      try {
+        const fazendas = await Api.get(`/clientes/${clienteId}/fazendas`);
+
+        if (!fazendas || !Array.isArray(fazendas) || fazendas.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="table-empty">
+                <i class="bi bi-geo-alt"></i>
+                Nenhuma fazenda cadastrada para este cliente.
+              </td>
+            </tr>`;
+          return;
+        }
+
+        tbody.innerHTML = fazendas.map(f => {
+          const localizacao = (f.cidade && f.estado) ? `${f.cidade} / ${f.estado}` : (f.cidade || f.estado || "-");
+
+          let ieLabel = "-";
+          if (f.tipoIe === "CONTRIBUINTE") {
+            ieLabel = `<span style="font-family: monospace;">${f.inscricaoEstadual || "-"}</span>`;
+          } else {
+            ieLabel = `<span style="color: var(--text-muted); font-size: 0.8rem;">${f.tipoIe}</span>`;
+          }
+
+          return `
+            <tr>
+              <td style="font-weight: 600;">${f.nome}</td>
+              <td>${f.tipoIe}</td>
+              <td>${ieLabel}</td>
+              <td>${localizacao}</td>
+              <td>${App.renderStatusBadge(f.ativo ? 'ATIVO' : 'INATIVO')}</td>
+              <td>
+                <div class="actions-cell">
+                  <a href="/clientes/${clienteId}/fazendas/${f.id}/editar" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-pencil"></i>
+                    <span>Editar</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>
