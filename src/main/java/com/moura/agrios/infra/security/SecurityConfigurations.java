@@ -40,8 +40,11 @@ public class SecurityConfigurations {
     // Rotas de visualização (páginas HTML)
     .requestMatchers(HttpMethod.GET, "/", "/login", "/dashboard", "/clientes/**", "/servicos/**", "/produtos/**", "/maquinas/**", "/ordens-servico/**", "/contas-receber/**", "/usuarios/**").permitAll()
 
-    // Login e registro
-    .requestMatchers(HttpMethod.POST,"/auth/login","/auth/register").permitAll()
+    // Login
+    .requestMatchers(HttpMethod.POST,"/auth/login").permitAll()
+
+    // Registro
+    .requestMatchers(HttpMethod.POST,"/auth/register").hasRole("ADMIN")
 
     // Cadastrar cliente: apenas aDMIN
     .requestMatchers(HttpMethod.POST,"/clientes").hasRole("ADMIN")
@@ -82,6 +85,14 @@ public class SecurityConfigurations {
 
     // Registrar pagamento
     .requestMatchers(HttpMethod.POST, "/contas-receber/*/pagamentos").hasRole("ADMIN")
+
+    // Cancelar conta receber
+    .requestMatchers(HttpMethod.PATCH, "/contas-receber/*/cancelar").hasRole("ADMIN")
+
+    //Aplicar desconto conta receber
+    .requestMatchers(HttpMethod.PATCH,"/contas-receber/*/desconto").hasRole("ADMIN")
+
+
 
     // Todas as demais rotas exigem autenticação
     .anyRequest().authenticated()

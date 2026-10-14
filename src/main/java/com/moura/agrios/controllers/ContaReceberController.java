@@ -48,4 +48,20 @@ public class ContaReceberController {
 
         return ResponseEntity.ok(contaReceberService.buscarPorId(id));
     }
+
+    //CANCELAR
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<ContaReceberResponse> cancelar(@PathVariable Integer id) {
+
+        return ResponseEntity.ok(contaReceberService.cancelar(id));
+    }
+
+
+    @PatchMapping("/{id}/desconto")
+    public ResponseEntity<ContaReceberResponse> aplicarDesconto(@PathVariable Integer id, @Valid @RequestBody AplicarDescontoRequest request) {
+
+        return ResponseEntity.ok(contaReceberService.aplicarDesconto(id,request));
+    }
+
+
 }

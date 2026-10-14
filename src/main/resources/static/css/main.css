@@ -485,6 +485,19 @@ a:hover {
   background-color: #f8faf8;
 }
 
+.table-custom tbody tr.row-cancelada {
+  background-color: #fafafa;
+  opacity: 0.72;
+}
+
+.table-custom tbody tr.row-cancelada:hover {
+  background-color: #f1f5f9;
+}
+
+.table-custom tbody tr.row-quitada {
+  background-color: #fafdfa;
+}
+
 .table-custom tbody tr:last-child td {
   border-bottom: none;
 }
@@ -568,6 +581,12 @@ a:hover {
 .btn-sm {
   padding: 5px 10px;
   font-size: 0.78rem;
+}
+
+.btn:disabled, .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(40%);
 }
 
 .btn-primary {

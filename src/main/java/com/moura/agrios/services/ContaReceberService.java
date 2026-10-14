@@ -102,7 +102,8 @@ public class ContaReceberService {
         }
 
         BigDecimal recebido = calcularValorRecebido(contaId);
-        BigDecimal saldo = conta.getValor().subtract(recebido);
+        BigDecimal valorFinal = conta.getValor().subtract(conta.getValorDesconto());
+        BigDecimal saldo = valorFinal.subtract(recebido);
 
         if (request.valor().compareTo(saldo) > 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Pagamento não pode ser maior que o saldo da conta");
@@ -128,6 +129,42 @@ public class ContaReceberService {
         return mapearResposta(conta);
     }
 
+    // =====================================
+    // Adicionar desconto
+    // =====================================
+
+    @Transactional
+    public ContaReceberResponse aplicarDesconto(Integer contaId, AplicarDescontoRequest request) {
+
+        ContaReceber conta = buscarConta(contaId);
+
+        if (conta.getStatus() == StatusContaReceber.CANCELADA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Não é possível aplicar desconto em uma conta cancelada");
+        }
+
+        if (conta.getStatus() == StatusContaReceber.QUITADA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Não é possível aplicar desconto em uma conta quitada");
+        }
+
+        BigDecimal valorRecebido = calcularValorRecebido(contaId);
+        BigDecimal novoDesconto = request.valor();
+        BigDecimal valorFinal = conta.getValor().subtract(novoDesconto);
+
+        if (valorFinal.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O desconto não pode ser maior que o valor da conta");
+        }
+
+        if (valorFinal.compareTo(valorRecebido) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"O desconto não pode deixar o valor da conta menor que o valor já recebido");
+        }
+
+        conta.setValorDesconto(novoDesconto);
+
+        contaRepository.save(conta);
+        atualizarStatus(conta);
+        return mapearResposta(conta);
+    }
+
     // ========================================
     // CANCELAR PELA OS
     // ========================================
@@ -148,6 +185,26 @@ public class ContaReceberService {
         conta.setStatus(StatusContaReceber.CANCELADA);
         contaRepository.save(conta);
     }
+
+    //==============================
+    // CANCELAR MANUALMENTE
+    //==============================    
+
+    @Transactional
+    public ContaReceberResponse cancelar(Integer id) {
+
+        ContaReceber conta = buscarConta(id);
+
+        if (conta.getStatus() == StatusContaReceber.CANCELADA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Esta conta já está cancelada");
+        }
+
+        conta.setStatus(StatusContaReceber.CANCELADA);
+
+        contaRepository.save(conta);
+        return mapearResposta(conta);
+    }
+
 
     // ========================================
     // BUSCAR
@@ -196,46 +253,35 @@ public class ContaReceberService {
 
     private void atualizarStatus(ContaReceber conta) {
 
-        /*
-         * Cancelada nunca muda automaticamente.
-         */
         if (conta.getStatus() == StatusContaReceber.CANCELADA) {
             return;
         }
 
         BigDecimal recebido = calcularValorRecebido(conta.getId());
+        BigDecimal valorFinal = conta.getValor().subtract(conta.getValorDesconto());
 
-        /*
-         * Pagou tudo.
-         */
-        if (recebido.compareTo(conta.getValor()) >= 0) {
 
+        // Conta totalmente paga
+        if (recebido.compareTo(valorFinal) >= 0) {
             conta.setStatus(StatusContaReceber.QUITADA);
             contaRepository.save(conta);
             return;
         }
 
-        /*
-         * Chegou ao dia do vencimento
-         * e ainda existe saldo.
-         */
+        // conta vencida e ainda tem saldo
         if (!conta.getDataVencimento().isAfter(hoje())) {
-
             conta.setStatus(StatusContaReceber.ATRASADA);
             contaRepository.save(conta);
             return;
         }
 
-        /*
-         * Pagou alguma coisa,
-         * mas ainda possui saldo.
-         */
+        // ja recebeu um pouco
         if (recebido.compareTo(BigDecimal.ZERO) > 0) {
             conta.setStatus(StatusContaReceber.PARCIAL);
-
         } else {
             conta.setStatus(StatusContaReceber.ABERTA);
         }
+
         contaRepository.save(conta);
     }
 
@@ -248,10 +294,7 @@ public class ContaReceberService {
         return recebimentoRepository.findByContaReceberIdOrderByDataPagamentoAsc(contaId)
             .stream()
             .map(Recebimento::getValor)
-            .reduce(
-                BigDecimal.ZERO,
-                BigDecimal::add
-            );
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // ========================================
@@ -294,7 +337,8 @@ public class ContaReceberService {
                                     BigDecimal::add
                                 );
 
-        BigDecimal saldo = conta.getValor().subtract(valorRecebido);
+        BigDecimal valorFinal = conta.getValor().subtract(conta.getValorDesconto());
+        BigDecimal saldo = valorFinal.subtract(valorRecebido); //valor final com desconto
 
         List<RecebimentoResponse> pagamentos = recebimentos
                 .stream()
@@ -323,6 +367,8 @@ public class ContaReceberService {
             conta.getDescricao(),
 
             conta.getValor(),
+            conta.getValorDesconto(),
+            valorFinal,
             valorRecebido,
             saldo,
 

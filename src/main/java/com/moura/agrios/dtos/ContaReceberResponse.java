@@ -24,6 +24,10 @@ public record ContaReceberResponse(
 
     BigDecimal valor,
 
+    BigDecimal valorDesconto,
+
+    BigDecimal valorFinal,
+
     BigDecimal valorRecebido,
 
     BigDecimal saldo,

@@ -79,11 +79,7 @@ public ResponseEntity<OrdemServicoResponse> atualizar(
 
     // BUSCAR POR ID
     @GetMapping("/{id}")
-    public ResponseEntity<OrdemServicoResponse> buscarPorId(
-            @PathVariable Integer id) {
-
-        return ResponseEntity.ok(
-            ordemServicoService.buscarPorId(id)
-        );
+    public ResponseEntity<OrdemServicoResponse> buscarPorId(@PathVariable Integer id) {
+        return ResponseEntity.ok(ordemServicoService.buscarPorId(id));
     }
 }
