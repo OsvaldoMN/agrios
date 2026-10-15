@@ -181,4 +181,20 @@ public class WebViewController {
         model.addAttribute("usuarioId", id);
         return "usuarios/form";
     }
+
+    // --- RELATÓRIOS ---
+    @GetMapping(value = "/relatorios/ordens-servico", produces = MediaType.TEXT_HTML_VALUE)
+    public String relatorioOrdensServico() {
+        return "relatorios/ordens-servico";
+    }
+
+    @GetMapping(value = "/relatorios/contas-receber", produces = MediaType.TEXT_HTML_VALUE)
+    public String relatorioContasReceber() {
+        return "relatorios/contas-receber";
+    }
+
+    @GetMapping(value = "/relatorios/trabalho-fazenda", produces = MediaType.TEXT_HTML_VALUE)
+    public String relatorioTrabalhoFazenda() {
+        return "relatorios/trabalho-fazenda";
+    }
 }
