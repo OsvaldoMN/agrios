@@ -7,7 +7,22 @@ const App = (function () {
   function init() {
     initSidebar();
     initUserProfile();
+    initRolePermissions();
     highlightActiveNavLink();
+  }
+
+  // Controle de visibilidade para itens exclusivos de ADMIN
+  function initRolePermissions() {
+    const user = Api.getUser();
+    const isAdmin = user && String(user.role).toUpperCase() === "ADMIN";
+
+    document.querySelectorAll('[data-role="ADMIN"]').forEach(el => {
+      if (!isAdmin) {
+        el.style.display = "none";
+      } else {
+        el.style.display = "";
+      }
+    });
   }
 
   // Sidebar responsiva

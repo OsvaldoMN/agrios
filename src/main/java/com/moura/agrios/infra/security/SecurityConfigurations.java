@@ -95,6 +95,11 @@ public class SecurityConfigurations {
     //Aplicar desconto conta receber
     .requestMatchers(HttpMethod.PATCH,"/contas-receber/*/desconto").hasRole("ADMIN")
 
+    // Módulo de Backup: apenas ADMIN
+    .requestMatchers(HttpMethod.GET, "/backup").hasRole("ADMIN")
+    .requestMatchers(HttpMethod.GET, "/backup/gerar").hasRole("ADMIN")
+    .requestMatchers(HttpMethod.POST, "/backup/restaurar").hasRole("ADMIN")
+
 
 
     // Todas as demais rotas exigem autenticação

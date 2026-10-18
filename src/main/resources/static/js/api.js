@@ -13,20 +13,41 @@ const Api = (function () {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && (!parsed.role || parsed.role === "USER")) {
+        const token = getToken();
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            if (payload.role) {
+              parsed.role = payload.role;
+              localStorage.setItem(USER_KEY, JSON.stringify(parsed));
+            }
+          } catch (ignored) {}
+        }
+      }
+      return parsed;
     } catch (e) {
       return null;
     }
   }
 
   function setSession(token, username, role) {
+    if (!role && token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.role) role = payload.role;
+      } catch (ignored) {}
+    }
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify({ username, role }));
+    localStorage.setItem(USER_KEY, JSON.stringify({ username, role: role || "USER" }));
+    document.cookie = `agrios_token=${encodeURIComponent(token)}; path=/; max-age=7200; SameSite=Lax`;
   }
 
   function clearSession() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    document.cookie = "agrios_token=; path=/; max-age=0; SameSite=Lax";
   }
 
   function isAuthenticated() {
@@ -35,7 +56,14 @@ const Api = (function () {
 
   function requireAuth() {
     if (!isAuthenticated()) {
+      clearSession();
       window.location.href = "/login";
+      return;
+    }
+    // Garante que o cookie esteja sincronizado para requisições de página do browser
+    const token = getToken();
+    if (token && !document.cookie.includes("agrios_token=")) {
+      document.cookie = `agrios_token=${encodeURIComponent(token)}; path=/; max-age=7200; SameSite=Lax`;
     }
   }
 
