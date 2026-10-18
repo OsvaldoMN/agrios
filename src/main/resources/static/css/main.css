@@ -1087,3 +1087,271 @@ a:hover {
     padding: 20px;
   }
 }
+
+/* ==========================================================================
+   Módulo de Relatórios - Layout Compacto & Profissional
+   ========================================================================== */
+.report-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.report-header-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.report-header-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.report-filters-box {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.report-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.report-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1 1 auto;
+}
+
+.report-filter-item label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+.report-filter-item .form-control,
+.report-filter-item .form-select {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  height: 36px;
+}
+
+.report-filter-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.report-filter-actions .btn {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.report-summary-bar {
+  background-color: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.report-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.report-summary-item strong {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.report-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 20px 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   Estilos de Impressão (Exportação PDF nativa)
+   ========================================================================== */
+.print-only-block {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 12mm 10mm;
+    size: auto;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 9pt !important;
+  }
+
+  .app-sidebar,
+  .app-header,
+  .report-header-bar,
+  .report-filters-box,
+  .filter-bar,
+  .btn,
+  .btn-print,
+  .toast-container,
+  .sidebar-backdrop {
+    display: none !important;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-content {
+    padding: 0 !important;
+  }
+
+  .print-only-block {
+    display: block !important;
+    margin-bottom: 12px;
+  }
+
+  .print-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #275628;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+
+  .print-header-brand {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #275628;
+    letter-spacing: 0.5px;
+  }
+
+  .print-header-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 2px;
+  }
+
+  .print-header-meta {
+    font-size: 8pt;
+    color: #64748b;
+    text-align: right;
+  }
+
+  .print-filters-summary {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 6px 10px !important;
+    font-size: 8pt !important;
+    color: #334155 !important;
+    margin-bottom: 10px !important;
+    border-radius: 3px;
+    line-height: 1.4;
+  }
+
+  .print-filters-summary strong {
+    color: #0f172a;
+  }
+
+  .report-summary-bar {
+    background-color: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 3px solid #275628 !important;
+    padding: 6px 10px !important;
+    margin-bottom: 12px !important;
+    font-size: 8.5pt !important;
+    gap: 8px 16px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    margin-bottom: 12px !important;
+    border-radius: 0 !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  .table-custom {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8pt !important;
+  }
+
+  .table-custom th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-bottom: 1.5px solid #94a3b8 !important;
+    padding: 5px 6px !important;
+    font-weight: 700 !important;
+  }
+
+  .table-custom td {
+    padding: 4px 6px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .badge {
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+    padding: 1px 4px !important;
+    font-size: 7.5pt !important;
+  }
+}
+

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Relatório de Ordens de Serviço')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Relatórios')}"></header>
+
+      <main class="app-content">
+
+        <!-- Bloco Exclusivo de Impressão (Oculto em tela, visível em impressão) -->
+        <div class="print-only-block">
+          <div class="print-header-top">
+            <div>
+              <div class="print-header-brand">AgriOS</div>
+              <div class="print-header-title">Relatório de Ordens de Serviço</div>
+            </div>
+            <div class="print-header-meta">
+              <div>Emitido em: <span id="printDataEmissao">-</span></div>
+            </div>
+          </div>
+          <div class="print-filters-summary" id="printFiltrosTexto">
+            <!-- Texto compacto dos filtros aplicados -->
+          </div>
+        </div>
+
+        <!-- Cabeçalho de Tela Simples e Linear -->
+        <div class="report-header-bar">
+          <div>
+            <h2 class="report-header-title">
+              <i class="bi bi-file-earmark-bar-graph"></i>
+              <span>Relatório de Ordens de Serviço</span>
+            </h2>
+            <div class="report-header-subtitle">Listagem operacional e consolidação por cliente, fazenda e serviço</div>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()" title="Imprimir ou Salvar em PDF">
+              <i class="bi bi-printer"></i>
+              <span>Imprimir / PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Área de Filtros Compacta -->
+        <div class="report-filters-box">
+          <form id="formFiltroOS">
+            <div class="report-filters-row">
+
+              <div class="report-filter-item" style="max-width: 140px;">
+                <label for="filtroDataInicio">Início</label>
+                <input type="date" id="filtroDataInicio" class="form-control">
+              </div>
+
+              <div class="report-filter-item" style="max-width: 140px;">
+                <label for="filtroDataFim">Fim</label>
+                <input type="date" id="filtroDataFim" class="form-control">
+              </div>
+
+              <div class="report-filter-item" style="min-width: 180px;">
+                <label for="filtroCliente">Cliente</label>
+                <select id="filtroCliente" class="form-select">
+                  <option value="">Todos os Clientes</option>
+                </select>
+              </div>
+
+              <div class="report-filter-item" style="min-width: 170px;">
+                <label for="filtroFazenda">Fazenda</label>
+                <select id="filtroFazenda" class="form-select" disabled>
+                  <option value="">Todas as Fazendas</option>
+                </select>
+              </div>
+
+              <div class="report-filter-item" style="min-width: 150px;">
+                <label for="filtroServico">Serviço</label>
+                <select id="filtroServico" class="form-select">
+                  <option value="">Todos os Serviços</option>
+                </select>
+              </div>
+
+              <div class="report-filter-item" style="min-width: 140px;">
+                <label for="filtroProduto">Produto</label>
+                <select id="filtroProduto" class="form-select">
+                  <option value="">Todos os Produtos</option>
+                </select>
+              </div>
+
+              <div class="report-filter-item" style="max-width: 150px;">
+                <label for="filtroStatus">Status</label>
+                <select id="filtroStatus" class="form-select">
+                  <option value="">Todos os Status</option>
+                  <option value="ABERTA">Aberta</option>
+                  <option value="FINALIZADA">Finalizada</option>
+                  <option value="CANCELADA">Cancelada</option>
+                </select>
+              </div>
+
+              <div class="report-filter-actions">
+                <button type="button" id="btnLimparFiltros" class="btn btn-secondary" title="Limpar filtros">
+                  <i class="bi bi-x-circle"></i>
+                  <span>Limpar</span>
+                </button>
+                <button type="submit" id="btnFiltrar" class="btn btn-primary">
+                  <i class="bi bi-search"></i>
+                  <span>Filtrar</span>
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+
+        <!-- Resumo Discreto em Linha (Sem cards de dashboard) -->
+        <div class="report-summary-bar">
+          <div class="report-summary-item">
+            <i class="bi bi-file-earmark-text text-muted"></i>
+            <span id="summaryQtdOS"><strong>0</strong> OS</span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <i class="bi bi-bounding-box text-muted"></i>
+            <span id="summaryHectaresOS"><strong>0,00</strong> ha</span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <i class="bi bi-cash-stack text-muted"></i>
+            <span id="summaryValorOS">Valor Total: <strong>R$ 0,00</strong></span>
+          </div>
+        </div>
+
+        <!-- Tabela Direta -->
+        <div class="table-responsive" style="background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th style="width: 70px;">OS #</th>
+                <th>Início</th>
+                <th>Fim</th>
+                <th>Cliente</th>
+                <th>Fazenda</th>
+                <th>Serviço</th>
+                <th>Produto</th>
+                <th style="text-align: right;">Hectares</th>
+                <th>Status</th>
+                <th style="text-align: right;">Valor Total</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaRelatorioOSBody">
+              <tr>
+                <td colspan="10" class="table-empty">
+                  <i class="bi bi-hourglass-split"></i>
+                  Carregando relatório...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("printDataEmissao").textContent = App.formatDateTime(new Date());
+
+      await carregarOpcoesFiltros();
+      configurarDependenciaClienteFazenda();
+      document.getElementById("formFiltroOS").addEventListener("submit", aplicarFiltros);
+      document.getElementById("btnLimparFiltros").addEventListener("click", limparFiltros);
+
+      await consultarRelatorio();
+    });
+
+    async function carregarOpcoesFiltros() {
+      try {
+        const [clientes, servicos, produtos] = await Promise.all([
+          Api.get("/clientes"),
+          Api.get("/servicos"),
+          Api.get("/produtos")
+        ]);
+
+        const clienteSelect = document.getElementById("filtroCliente");
+        (clientes || []).forEach(c => {
+          const nome = c.nome || c.razaoSocial;
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = nome;
+          clienteSelect.appendChild(opt);
+        });
+
+        const servicoSelect = document.getElementById("filtroServico");
+        (servicos || []).forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = s.nome;
+          servicoSelect.appendChild(opt);
+        });
+
+        const produtoSelect = document.getElementById("filtroProduto");
+        (produtos || []).forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = p.nome;
+          produtoSelect.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Erro ao carregar opções:", err);
+      }
+    }
+
+    function configurarDependenciaClienteFazenda() {
+      const clienteSelect = document.getElementById("filtroCliente");
+      const fazendaSelect = document.getElementById("filtroFazenda");
+
+      clienteSelect.addEventListener("change", async () => {
+        const clienteId = clienteSelect.value;
+        fazendaSelect.innerHTML = '<option value="">Todas as Fazendas</option>';
+
+        if (!clienteId) {
+          fazendaSelect.disabled = true;
+          return;
+        }
+
+        fazendaSelect.disabled = true;
+        fazendaSelect.innerHTML = '<option value="">Carregando...</option>';
+
+        try {
+          const fazendas = await Api.get(`/clientes/${clienteId}/fazendas`);
+          fazendaSelect.innerHTML = '<option value="">Todas as Fazendas</option>';
+          (fazendas || []).forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = f.id;
+            opt.textContent = f.nome;
+            fazendaSelect.appendChild(opt);
+          });
+          fazendaSelect.disabled = false;
+        } catch (err) {
+          fazendaSelect.innerHTML = '<option value="">Todas as Fazendas</option>';
+          fazendaSelect.disabled = false;
+        }
+      });
+    }
+
+    async function aplicarFiltros(e) {
+      e.preventDefault();
+      await consultarRelatorio();
+    }
+
+    function limparFiltros() {
+      document.getElementById("formFiltroOS").reset();
+      const fazendaSelect = document.getElementById("filtroFazenda");
+      fazendaSelect.innerHTML = '<option value="">Todas as Fazendas</option>';
+      fazendaSelect.disabled = true;
+      consultarRelatorio();
+    }
+
+    function atualizarResumoImpressao(filtrosTexto) {
+      document.getElementById("printDataEmissao").textContent = App.formatDateTime(new Date());
+      document.getElementById("printFiltrosTexto").innerHTML = `<strong>Filtros aplicados:</strong> ${filtrosTexto}`;
+    }
+
+    async function consultarRelatorio() {
+      const tbody = document.getElementById("tabelaRelatorioOSBody");
+      tbody.innerHTML = `<tr><td colspan="10" class="table-empty"><i class="bi bi-hourglass-split"></i> Consultando dados...</td></tr>`;
+
+      const params = new URLSearchParams();
+      const dataInicio = document.getElementById("filtroDataInicio").value;
+      const dataFim = document.getElementById("filtroDataFim").value;
+      const clienteSelect = document.getElementById("filtroCliente");
+      const fazendaSelect = document.getElementById("filtroFazenda");
+      const servicoSelect = document.getElementById("filtroServico");
+      const produtoSelect = document.getElementById("filtroProduto");
+      const statusSelect = document.getElementById("filtroStatus");
+
+      const clienteId = clienteSelect.value;
+      const fazendaId = fazendaSelect.value;
+      const servicoId = servicoSelect.value;
+      const produtoId = produtoSelect.value;
+      const status = statusSelect.value;
+
+      if (dataInicio) params.append("dataInicio", dataInicio);
+      if (dataFim) params.append("dataFim", dataFim);
+      if (clienteId) params.append("clienteId", clienteId);
+      if (fazendaId) params.append("fazendaId", fazendaId);
+      if (servicoId) params.append("servicoId", servicoId);
+      if (produtoId) params.append("produtoId", produtoId);
+      if (status) params.append("status", status);
+
+      // Monta texto compacto para impressão
+      const partesFiltro = [];
+      if (dataInicio || dataFim) {
+        const di = dataInicio ? App.formatDate(dataInicio) : "início";
+        const df = dataFim ? App.formatDate(dataFim) : "atual";
+        partesFiltro.push(`Período: ${di} a ${df}`);
+      } else {
+        partesFiltro.push("Período: Todos");
+      }
+      partesFiltro.push(`Cliente: ${clienteId ? clienteSelect.options[clienteSelect.selectedIndex].text : "Todos"}`);
+      partesFiltro.push(`Fazenda: ${fazendaId ? fazendaSelect.options[fazendaSelect.selectedIndex].text : "Todas"}`);
+      if (servicoId) partesFiltro.push(`Serviço: ${servicoSelect.options[servicoSelect.selectedIndex].text}`);
+      if (produtoId) partesFiltro.push(`Produto: ${produtoSelect.options[produtoSelect.selectedIndex].text}`);
+      partesFiltro.push(`Status: ${status ? statusSelect.options[statusSelect.selectedIndex].text : "Todos"}`);
+
+      atualizarResumoImpressao(partesFiltro.join(" | "));
+
+      try {
+        const res = await Api.get(`/relatorios/api/ordens-servico?${params.toString()}`);
+
+        const totalOrdens = res.totalOrdens || 0;
+        const totalHectares = Number(res.totalHectares || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ha";
+        const valorTotal = App.formatCurrency(res.valorTotal || 0);
+
+        document.getElementById("summaryQtdOS").innerHTML = `<strong>${totalOrdens}</strong> ${totalOrdens === 1 ? 'OS retornada' : 'OS retornadas'}`;
+        document.getElementById("summaryHectaresOS").innerHTML = `<strong>${totalHectares}</strong>`;
+        document.getElementById("summaryValorOS").innerHTML = `Valor Total: <strong>${valorTotal}</strong>`;
+
+        if (!res.itens || res.itens.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="table-empty"><i class="bi bi-file-earmark-x"></i> Nenhuma Ordem de Serviço encontrada para os filtros selecionados.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = res.itens.map(item => `
+          <tr>
+            <td style="font-weight: 700; color: var(--color-primary);">#${item.id}</td>
+            <td>${App.formatDate(item.dataInicio)}</td>
+            <td>${item.dataFim ? App.formatDate(item.dataFim) : '<span style="color: var(--text-light);">-</span>'}</td>
+            <td style="font-weight: 600;">${item.clienteNome}</td>
+            <td>${item.fazendaNome}</td>
+            <td>${item.servicoNome}</td>
+            <td>${item.produtoNome}</td>
+            <td style="text-align: right; font-family: monospace;">${item.hectares ? Number(item.hectares).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + ' ha' : '-'}</td>
+            <td>${App.renderStatusBadge(item.status)}</td>
+            <td style="text-align: right; font-weight: 600; font-family: monospace;">${App.formatCurrency(item.valorTotal)}</td>
+          </tr>
+        `).join("");
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="10" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

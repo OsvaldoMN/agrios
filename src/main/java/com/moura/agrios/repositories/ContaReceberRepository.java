@@ -3,12 +3,13 @@ package com.moura.agrios.repositories;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import com.moura.agrios.models.ContaReceber;
 
 @Repository
-public interface ContaReceberRepository extends JpaRepository<ContaReceber, Integer> {
+public interface ContaReceberRepository extends JpaRepository<ContaReceber, Integer>, JpaSpecificationExecutor<ContaReceber> {
 
     boolean existsByOrdemServicoId(Integer ordemServicoId);
 

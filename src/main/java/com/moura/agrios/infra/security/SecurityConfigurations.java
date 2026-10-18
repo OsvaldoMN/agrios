@@ -40,7 +40,7 @@ public class SecurityConfigurations {
     .requestMatchers("/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
 
     // Rotas de visualização (páginas HTML)
-    .requestMatchers(HttpMethod.GET, "/", "/login", "/dashboard", "/clientes/**", "/servicos/**", "/produtos/**", "/maquinas/**", "/ordens-servico/**", "/contas-receber/**", "/usuarios/**").permitAll()
+    .requestMatchers(HttpMethod.GET, "/", "/login", "/dashboard", "/clientes/**", "/servicos/**", "/produtos/**", "/maquinas/**", "/ordens-servico/**", "/contas-receber/**", "/usuarios/**", "/relatorios/**").permitAll()
 
     // Login
     .requestMatchers(HttpMethod.POST,"/auth/login").permitAll()

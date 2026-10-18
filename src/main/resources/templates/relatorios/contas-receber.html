@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Relatório de Contas a Receber')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Relatórios')}"></header>
+
+      <main class="app-content">
+
+        <!-- Bloco Exclusivo de Impressão -->
+        <div class="print-only-block">
+          <div class="print-header-top">
+            <div>
+              <div class="print-header-brand">AgriOS</div>
+              <div class="print-header-title">Relatório de Contas a Receber</div>
+            </div>
+            <div class="print-header-meta">
+              <div>Emitido em: <span id="printDataEmissao">-</span></div>
+            </div>
+          </div>
+          <div class="print-filters-summary" id="printFiltrosTexto">
+            <!-- Texto compacto dos filtros aplicados -->
+          </div>
+        </div>
+
+        <!-- Cabeçalho de Tela Simples -->
+        <div class="report-header-bar">
+          <div>
+            <h2 class="report-header-title">
+              <i class="bi bi-graph-up-arrow"></i>
+              <span>Relatório de Contas a Receber</span>
+            </h2>
+            <div class="report-header-subtitle">Posição financeira de vencimentos, recebimentos, descontos e saldo pendente</div>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()" title="Imprimir ou Salvar em PDF">
+              <i class="bi bi-printer"></i>
+              <span>Imprimir / PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Área de Filtros Compacta -->
+        <div class="report-filters-box">
+          <form id="formFiltroContas">
+            <div class="report-filters-row">
+
+              <div class="report-filter-item" style="max-width: 150px;">
+                <label for="filtroDataInicio">Vencimento Inicial</label>
+                <input type="date" id="filtroDataInicio" class="form-control">
+              </div>
+
+              <div class="report-filter-item" style="max-width: 150px;">
+                <label for="filtroDataFim">Vencimento Final</label>
+                <input type="date" id="filtroDataFim" class="form-control">
+              </div>
+
+              <div class="report-filter-item" style="min-width: 220px;">
+                <label for="filtroCliente">Cliente</label>
+                <select id="filtroCliente" class="form-select">
+                  <option value="">Todos os Clientes</option>
+                </select>
+              </div>
+
+              <div class="report-filter-item" style="min-width: 180px;">
+                <label for="filtroStatus">Status</label>
+                <select id="filtroStatus" class="form-select">
+                  <option value="">Todos os Status</option>
+                  <option value="ABERTA">Aberta (Pendente)</option>
+                  <option value="PARCIAL">Parcialmente Paga</option>
+                  <option value="ATRASADA">Atrasada (Vencida)</option>
+                  <option value="QUITADA">Quitada</option>
+                  <option value="CANCELADA">Cancelada</option>
+                </select>
+              </div>
+
+              <div class="report-filter-actions">
+                <button type="button" id="btnLimparFiltros" class="btn btn-secondary" title="Limpar filtros">
+                  <i class="bi bi-x-circle"></i>
+                  <span>Limpar</span>
+                </button>
+                <button type="submit" id="btnFiltrar" class="btn btn-primary">
+                  <i class="bi bi-search"></i>
+                  <span>Filtrar</span>
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+
+        <!-- Resumo Discreto em Linha Única (Sem grandes cards) -->
+        <div class="report-summary-bar">
+          <div class="report-summary-item">
+            <span id="summaryTotalContas"><strong>0</strong> contas</span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <span>Original: <strong id="summaryValorOriginal">R$ 0,00</strong></span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <span>Descontos: <strong id="summaryDescontos" style="color: var(--color-warning);">R$ 0,00</strong></span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <span>Valor Final: <strong id="summaryValorFinal">R$ 0,00</strong></span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <span>Recebido: <strong id="summaryRecebido" style="color: var(--color-success);">R$ 0,00</strong></span>
+          </div>
+          <span>&bull;</span>
+          <div class="report-summary-item">
+            <span>Saldo: <strong id="summarySaldo" style="color: var(--color-danger);">R$ 0,00</strong></span>
+          </div>
+        </div>
+
+        <!-- Tabela Direta -->
+        <div class="table-responsive" style="background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th style="width: 60px;">#</th>
+                <th>Cliente</th>
+                <th style="width: 100px;">Origem</th>
+                <th>Descrição</th>
+                <th style="width: 95px;">Emissão</th>
+                <th style="width: 95px;">Vencimento</th>
+                <th style="width: 110px;">Status</th>
+                <th style="text-align: right; width: 110px;">Valor Orig.</th>
+                <th style="text-align: right; width: 95px;">Desconto</th>
+                <th style="text-align: right; width: 110px;">Valor Final</th>
+                <th style="text-align: right; width: 110px;">Recebido</th>
+                <th style="text-align: right; width: 110px;">Saldo</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaRelatorioContasBody">
+              <tr>
+                <td colspan="12" class="table-empty">
+                  <i class="bi bi-hourglass-split"></i>
+                  Carregando relatório financeiro...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("printDataEmissao").textContent = App.formatDateTime(new Date());
+
+      await carregarClientes();
+      document.getElementById("formFiltroContas").addEventListener("submit", aplicarFiltros);
+      document.getElementById("btnLimparFiltros").addEventListener("click", limparFiltros);
+
+      await consultarRelatorio();
+    });
+
+    async function carregarClientes() {
+      try {
+        const clientes = await Api.get("/clientes");
+        const select = document.getElementById("filtroCliente");
+        (clientes || []).forEach(c => {
+          const nome = c.nome || c.razaoSocial;
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = nome;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Erro ao carregar clientes:", err);
+      }
+    }
+
+    async function aplicarFiltros(e) {
+      e.preventDefault();
+      await consultarRelatorio();
+    }
+
+    function limparFiltros() {
+      document.getElementById("formFiltroContas").reset();
+      consultarRelatorio();
+    }
+
+    function atualizarResumoImpressao(filtrosTexto) {
+      document.getElementById("printDataEmissao").textContent = App.formatDateTime(new Date());
+      document.getElementById("printFiltrosTexto").innerHTML = `<strong>Filtros aplicados:</strong> ${filtrosTexto}`;
+    }
+
+    async function consultarRelatorio() {
+      const tbody = document.getElementById("tabelaRelatorioContasBody");
+      tbody.innerHTML = `<tr><td colspan="12" class="table-empty"><i class="bi bi-hourglass-split"></i> Consultando dados...</td></tr>`;
+
+      const params = new URLSearchParams();
+      const dataInicio = document.getElementById("filtroDataInicio").value;
+      const dataFim = document.getElementById("filtroDataFim").value;
+      const clienteSelect = document.getElementById("filtroCliente");
+      const statusSelect = document.getElementById("filtroStatus");
+
+      const clienteId = clienteSelect.value;
+      const status = statusSelect.value;
+
+      if (dataInicio) params.append("dataInicio", dataInicio);
+      if (dataFim) params.append("dataFim", dataFim);
+      if (clienteId) params.append("clienteId", clienteId);
+      if (status) params.append("status", status);
+
+      // Resumo para impressão
+      const partesFiltro = [];
+      if (dataInicio || dataFim) {
+        const di = dataInicio ? App.formatDate(dataInicio) : "início";
+        const df = dataFim ? App.formatDate(dataFim) : "atual";
+        partesFiltro.push(`Vencimento: ${di} a ${df}`);
+      } else {
+        partesFiltro.push("Vencimento: Todos");
+      }
+      partesFiltro.push(`Cliente: ${clienteId ? clienteSelect.options[clienteSelect.selectedIndex].text : "Todos"}`);
+      partesFiltro.push(`Status: ${status ? statusSelect.options[statusSelect.selectedIndex].text : "Todos"}`);
+
+      atualizarResumoImpressao(partesFiltro.join(" | "));
+
+      try {
+        const res = await Api.get(`/relatorios/api/contas-receber?${params.toString()}`);
+
+        const totalContas = res.totalContas || 0;
+        document.getElementById("summaryTotalContas").innerHTML = `<strong>${totalContas}</strong> ${totalContas === 1 ? 'conta' : 'contas'}`;
+        document.getElementById("summaryValorOriginal").textContent = App.formatCurrency(res.valorOriginalTotal || 0);
+        document.getElementById("summaryDescontos").textContent = App.formatCurrency(res.totalDescontos || 0);
+        document.getElementById("summaryValorFinal").textContent = App.formatCurrency(res.valorFinalTotal || 0);
+        document.getElementById("summaryRecebido").textContent = App.formatCurrency(res.totalRecebido || 0);
+        document.getElementById("summarySaldo").textContent = App.formatCurrency(res.saldoPendenteTotal || 0);
+
+        if (!res.itens || res.itens.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="12" class="table-empty"><i class="bi bi-cash-stack"></i> Nenhuma conta a receber encontrada para os filtros informados.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = res.itens.map(c => {
+          const ref = c.origem === "ORDEM_SERVICO" && c.ordemServicoId 
+            ? `<a href="/ordens-servico/${c.ordemServicoId}/detalhes" style="font-weight: 600; color: var(--color-primary);" title="Visualizar OS">OS #${c.ordemServicoId}</a>`
+            : `<span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">MANUAL</span>`;
+
+          const saldoEstilo = Number(c.saldo) > 0 ? "color: var(--color-danger); font-weight: 700;" : "color: var(--color-success); font-weight: 600;";
+
+          return `
+            <tr>
+              <td style="font-weight: 700;">#${c.id}</td>
+              <td style="font-weight: 600;">${c.clienteNome}</td>
+              <td>${ref}</td>
+              <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.descricao}">${c.descricao}</td>
+              <td>${App.formatDate(c.dataEmissao)}</td>
+              <td style="font-weight: 500;">${App.formatDate(c.dataVencimento)}</td>
+              <td>${App.renderStatusBadge(c.status)}</td>
+              <td style="text-align: right; font-family: monospace;">${App.formatCurrency(c.valorOriginal)}</td>
+              <td style="text-align: right; font-family: monospace; color: var(--color-warning);">${Number(c.valorDesconto) > 0 ? '-' + App.formatCurrency(c.valorDesconto) : '-'}</td>
+              <td style="text-align: right; font-family: monospace; font-weight: 600;">${App.formatCurrency(c.valorFinal)}</td>
+              <td style="text-align: right; font-family: monospace; color: var(--color-success);">${App.formatCurrency(c.valorRecebido)}</td>
+              <td style="text-align: right; font-family: monospace; ${saldoEstilo}">${App.formatCurrency(c.saldo)}</td>
+            </tr>
+          `;
+        }).join("");
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="12" class="table-empty" style="color: var(--color-danger);">${err.message}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>
