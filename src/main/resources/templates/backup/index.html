@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: html_head('Backup dos Dados')}"></head>
+
+<body>
+  <div class="app-container">
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside th:replace="~{layout/base :: sidebar}"></aside>
+
+    <div class="app-main">
+      <header th:replace="~{layout/base :: header('Backup dos Dados')}"></header>
+
+      <main class="app-content">
+
+        <div class="card" style="max-width: 600px;">
+          <div class="card-body" style="padding: 24px;">
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 24px;">
+              Faça uma cópia de segurança dos dados do sistema ou restaure um backup existente.
+            </p>
+
+            <!-- Backup Manual -->
+            <div style="margin-bottom: 28px;">
+              <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 12px;">
+                Backup manual
+              </h3>
+              <button type="button" id="btnGerarBackup" class="btn btn-primary">
+                <i class="bi bi-download"></i>
+                <span>Gerar Backup</span>
+              </button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin-bottom: 28px;">
+
+            <!-- Restaurar Backup -->
+            <div style="margin-bottom: 24px;">
+              <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 12px;">
+                Restaurar backup
+              </h3>
+
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="file" id="arquivoBackupInput" accept=".sql" style="display: none;">
+
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <button type="button" id="btnSelecionarArquivo" class="btn btn-secondary">
+                    <i class="bi bi-folder2-open"></i>
+                    <span>Selecionar arquivo</span>
+                  </button>
+                  <span id="nomeArquivoSelecionado" style="font-size: 0.88rem; color: var(--text-muted);">
+                    Nenhum arquivo selecionado
+                  </span>
+                </div>
+
+                <div>
+                  <button type="button" id="btnImportarBackup" class="btn btn-primary" disabled>
+                    <i class="bi bi-upload"></i>
+                    <span>Importar Backup</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Informação Discreta -->
+            <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 0.82rem; color: var(--text-light);">
+              Backup automático: diariamente às 23:00
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <div th:replace="~{layout/base :: modal_confirm}"></div>
+  <div th:replace="~{layout/base :: toasts}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Dupla checagem de autorização no frontend
+      Api.requireAuth();
+      const user = Api.getUser();
+      if (!user || String(user.role).toUpperCase() !== "ADMIN") {
+        App.toast("Acesso negado. Módulo restrito para administradores.", "error");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 800);
+        return;
+      }
+
+      const btnGerar = document.getElementById("btnGerarBackup");
+      const btnSelecionar = document.getElementById("btnSelecionarArquivo");
+      const fileInput = document.getElementById("arquivoBackupInput");
+      const nomeArquivoEl = document.getElementById("nomeArquivoSelecionado");
+      const btnImportar = document.getElementById("btnImportarBackup");
+
+      let arquivoSelecionado = null;
+
+      // --- GERAR BACKUP ---
+      btnGerar.addEventListener("click", async () => {
+        btnGerar.disabled = true;
+        btnGerar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <span>Gerando backup...</span>';
+        App.toast("Gerando backup...", "info");
+
+        try {
+          const token = Api.getToken();
+          const response = await fetch("/backup/gerar", {
+            method: "GET",
+            headers: {
+              "Authorization": "Bearer " + token
+            }
+          });
+
+          if (!response.ok) {
+            let errorText = "Erro ao gerar backup.";
+            try {
+              const body = await response.text();
+              if (body) errorText = body;
+            } catch (ignored) {}
+            throw new Error(errorText);
+          }
+
+          // Extrair o nome do arquivo a partir do header Content-Disposition ou default
+          let filename = "agrios_backup.sql";
+          const disposition = response.headers.get("Content-Disposition");
+          if (disposition && disposition.indexOf("filename=") !== -1) {
+            const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+            if (matches != null && matches[1]) {
+              filename = matches[1].replace(/['"]/g, "");
+            }
+          }
+
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = downloadUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(downloadUrl);
+
+          App.toast("Backup gerado com sucesso.", "success");
+        } catch (error) {
+          App.toast(error.message || "Erro ao gerar backup.", "error");
+        } finally {
+          btnGerar.disabled = false;
+          btnGerar.innerHTML = '<i class="bi bi-download"></i> <span>Gerar Backup</span>';
+        }
+      });
+
+      // --- SELECIONAR ARQUIVO ---
+      btnSelecionar.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          arquivoSelecionado = e.target.files[0];
+          nomeArquivoEl.textContent = arquivoSelecionado.name;
+          nomeArquivoEl.style.color = "var(--text-main)";
+          nomeArquivoEl.style.fontWeight = "500";
+          btnImportar.disabled = false;
+        } else {
+          arquivoSelecionado = null;
+          nomeArquivoEl.textContent = "Nenhum arquivo selecionado";
+          nomeArquivoEl.style.color = "var(--text-muted)";
+          nomeArquivoEl.style.fontWeight = "normal";
+          btnImportar.disabled = true;
+        }
+      });
+
+      // --- IMPORTAR / RESTAURAR BACKUP ---
+      btnImportar.addEventListener("click", () => {
+        if (!arquivoSelecionado) {
+          App.toast("Selecione um arquivo de backup antes de continuar.", "warning");
+          return;
+        }
+
+        App.confirm({
+          title: "Confirmar Restauração",
+          message: "Atenção: a restauração substituirá os dados atuais pelos dados presentes no backup selecionado. Deseja continuar?",
+          confirmText: "Restaurar Backup",
+          cancelText: "Cancelar",
+          confirmClass: "btn-danger",
+          onConfirm: () => executarRestauracao()
+        });
+      });
+
+      async function executarRestauracao() {
+        btnImportar.disabled = true;
+        btnSelecionar.disabled = true;
+        btnImportar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <span>Restaurando backup...</span>';
+        App.toast("Restaurando backup...", "info");
+
+        try {
+          const formData = new FormData();
+          formData.append("arquivo", arquivoSelecionado);
+
+          const token = Api.getToken();
+          const response = await fetch("/backup/restaurar", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + token
+            },
+            body: formData
+          });
+
+          const responseText = await response.text();
+
+          if (!response.ok) {
+            let errorMsg = "Erro ao restaurar backup.";
+            if (responseText) {
+              try {
+                const parsed = JSON.parse(responseText);
+                errorMsg = parsed.message || parsed.error || responseText;
+              } catch (e) {
+                errorMsg = responseText;
+              }
+            }
+            throw new Error(errorMsg);
+          }
+
+          App.toast("Backup restaurado com sucesso.", "success");
+
+          // Reseta seleção
+          fileInput.value = "";
+          arquivoSelecionado = null;
+          nomeArquivoEl.textContent = "Nenhum arquivo selecionado";
+          nomeArquivoEl.style.color = "var(--text-muted)";
+          nomeArquivoEl.style.fontWeight = "normal";
+        } catch (error) {
+          App.toast(error.message || "Não foi possível restaurar o backup.", "error");
+        } finally {
+          btnSelecionar.disabled = false;
+          btnImportar.disabled = arquivoSelecionado === null;
+          btnImportar.innerHTML = '<i class="bi bi-upload"></i> <span>Importar Backup</span>';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

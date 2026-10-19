@@ -44,9 +44,17 @@ public class SecurityFilter extends OncePerRequestFilter {
     
     private String recoverToken(HttpServletRequest request){
         var authHeader = request.getHeader("Authorization");
-
-        if(authHeader == null) return null;
-        return authHeader.replace("Bearer ", "");
+        if(authHeader != null && authHeader.startsWith("Bearer ")){
+            return authHeader.replace("Bearer ", "");
+        }
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("agrios_token".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
 

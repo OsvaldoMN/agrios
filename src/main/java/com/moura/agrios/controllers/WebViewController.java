@@ -197,4 +197,10 @@ public class WebViewController {
     public String relatorioTrabalhoFazenda() {
         return "relatorios/trabalho-fazenda";
     }
+
+    // --- BACKUP ---
+    @GetMapping(value = "/backup", produces = MediaType.TEXT_HTML_VALUE)
+    public String backup() {
+        return "backup/index";
+    }
 }

@@ -10,6 +10,8 @@ public class AgriosApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(AgriosApplication.class, args);
+
+
 	}
 
 }
